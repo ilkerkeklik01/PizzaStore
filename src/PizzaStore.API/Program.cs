@@ -2,11 +2,12 @@ using DotNetEnv;
 using FluentValidation;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Identity;
-using Microsoft.OpenApi;
-using PizzaStore.API.Middleware;
+using Microsoft.OpenApi.Models;
+using PizzaStore.Core.Auth.Extensions;
+using PizzaStore.Core.CrossCuttingConcerns.Extensions;
+using PizzaStore.Infrastructure.Persistence.Extensions;
+using PizzaStore.Infrastructure.Persistence.Data;
 using PizzaStore.Domain.Entities;
-using PizzaStore.Infrastructure;
-using PizzaStore.Infrastructure.Data;
 
 // Load environment variables from .env file
 Env.TraversePath().Load();
@@ -20,13 +21,16 @@ builder.Configuration.AddEnvironmentVariables();
 builder.Services.AddControllers();
 
 // Add MediatR
-builder.Services.AddMediatR(cfg => cfg.RegisterServicesFromAssembly(typeof(PizzaStore.Application.Commands.Auth.RegisterUserCommand).Assembly));
+builder.Services.AddMediatR(cfg => cfg.RegisterServicesFromAssembly(typeof(PizzaStore.Application.Features.Commands.Auth.Register.RegisterUserCommand).Assembly));
 
 // Add FluentValidation
-builder.Services.AddValidatorsFromAssembly(typeof(PizzaStore.Application.Validators.RegisterUserDtoValidator).Assembly);
+builder.Services.AddValidatorsFromAssembly(typeof(PizzaStore.Application.Features.Commands.Auth.Register.RegisterUserDtoValidator).Assembly);
 
-// Add Infrastructure services (DbContext, Identity, JWT, Repositories)
-await builder.Services.AddInfrastructure(builder.Configuration);
+// Add Persistence services (DbContext, Identity, Repositories)
+builder.Services.AddPersistenceServices(builder.Configuration);
+
+// Add Auth services (JWT Authentication, AuthService)
+builder.Services.AddAuthServices(builder.Configuration);
 
 // Add Swagger/OpenAPI
 builder.Services.AddEndpointsApiExplorer();
@@ -49,9 +53,19 @@ builder.Services.AddSwaggerGen(options =>
     });
 
     // Apply JWT Bearer authentication globally to all endpoints
-    options.AddSecurityRequirement(document => new OpenApiSecurityRequirement
+    options.AddSecurityRequirement(new OpenApiSecurityRequirement
     {
-        [new OpenApiSecuritySchemeReference("bearer", document)] = []
+        {
+            new OpenApiSecurityScheme
+            {
+                Reference = new OpenApiReference
+                {
+                    Type = ReferenceType.SecurityScheme,
+                    Id = "bearer"
+                }
+            },
+            Array.Empty<string>()
+        }
     });
 });
 
@@ -69,12 +83,12 @@ builder.Services.AddCors(options =>
 var app = builder.Build();
 
 // Seed database with initial data
-await SeedData(app);
+await SeedDatabase(app);
 
 // Configure the HTTP request pipeline
 
 // IMPORTANT: Exception handler must be first
-app.UseMiddleware<GlobalExceptionHandlingMiddleware>();
+app.UseCrossCuttingConcerns();
 
 if (app.Environment.IsDevelopment())
 {
@@ -97,74 +111,16 @@ app.MapControllers();
 app.Run();
 
 // Seed initial data
-static async Task SeedData(WebApplication app)
+static async Task SeedDatabase(WebApplication app)
 {
     using var scope = app.Services.CreateScope();
     var services = scope.ServiceProvider;
 
-    try
-    {
-        var context = services.GetRequiredService<ApplicationDbContext>();
-        var userManager = services.GetRequiredService<UserManager<ApplicationUser>>();
-        var roleManager = services.GetRequiredService<RoleManager<ApplicationRole>>();
+    var context = services.GetRequiredService<ApplicationDbContext>();
+    var userManager = services.GetRequiredService<UserManager<ApplicationUser>>();
+    var roleManager = services.GetRequiredService<RoleManager<ApplicationRole>>();
+    var logger = services.GetRequiredService<ILogger<Program>>();
 
-        // Create roles
-        if (!await roleManager.RoleExistsAsync("Admin"))
-        {
-            await roleManager.CreateAsync(new ApplicationRole { Name = "Admin" });
-        }
-
-        if (!await roleManager.RoleExistsAsync("User"))
-        {
-            await roleManager.CreateAsync(new ApplicationRole { Name = "User" });
-        }
-
-        // Create admin user
-        var adminEmail = "admin@pizzastore.com";
-        var adminUser = await userManager.FindByEmailAsync(adminEmail);
-        if (adminUser == null)
-        {
-            adminUser = new ApplicationUser
-            {
-                UserName = adminEmail,
-                Email = adminEmail,
-                FirstName = "Admin",
-                LastName = "User",
-                EmailConfirmed = true
-            };
-
-            var result = await userManager.CreateAsync(adminUser, "Admin123");
-            if (result.Succeeded)
-            {
-                await userManager.AddToRoleAsync(adminUser, "Admin");
-            }
-        }
-
-        // Create regular user
-        var userEmail = "user@pizzastore.com";
-        var regularUser = await userManager.FindByEmailAsync(userEmail);
-        if (regularUser == null)
-        {
-            regularUser = new ApplicationUser
-            {
-                UserName = userEmail,
-                Email = userEmail,
-                FirstName = "Regular",
-                LastName = "User",
-                EmailConfirmed = true
-            };
-
-            var result = await userManager.CreateAsync(regularUser, "User123");
-            if (result.Succeeded)
-            {
-                await userManager.AddToRoleAsync(regularUser, "User");
-            }
-        }
-    }
-    catch (Exception ex)
-    {
-        var logger = services.GetRequiredService<ILogger<Program>>();
-        logger.LogError(ex, "An error occurred while seeding the database.");
-    }
+    await DbInitializer.SeedAsync(context, userManager, roleManager, logger);
 }
 

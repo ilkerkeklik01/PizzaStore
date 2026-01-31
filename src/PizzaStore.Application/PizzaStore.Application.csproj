@@ -2,6 +2,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\PizzaStore.Domain\PizzaStore.Domain.csproj" />
+    <ProjectReference Include="..\PizzaStore.Core.Auth\PizzaStore.Core.Auth.csproj" />
   </ItemGroup>
 
   <ItemGroup>
