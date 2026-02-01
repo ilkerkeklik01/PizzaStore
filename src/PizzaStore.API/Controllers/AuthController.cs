@@ -1,8 +1,8 @@
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using PizzaStore.Application.Features.Commands.Auth.Register;
-using PizzaStore.Application.Features.Commands.Auth.Login;
+using PizzaStore.Application.Features.Auth.Commands.Register;
+using PizzaStore.Application.Features.Auth.Commands.Login;
 using PizzaStore.Core.Auth.DTOs;
 
 namespace PizzaStore.API.Controllers;

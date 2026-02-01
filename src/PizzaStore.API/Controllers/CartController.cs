@@ -1,14 +1,14 @@
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using PizzaStore.Application.Features.Commands.Cart.AddPizzaToCart;
-using PizzaStore.Application.Features.Commands.Cart.UpdateCartItemQuantity;
-using PizzaStore.Application.Features.Commands.Cart.IncreaseCartItemQuantity;
-using PizzaStore.Application.Features.Commands.Cart.DecreaseCartItemQuantity;
-using PizzaStore.Application.Features.Commands.Cart.RemoveCartItem;
-using PizzaStore.Application.Features.Commands.Cart.ClearCart;
-using PizzaStore.Application.Features.Queries.Cart.GetUserCart;
-using PizzaStore.Application.Features.Queries.Cart.GetCartItem;
+using PizzaStore.Application.Features.Cart.Commands.AddPizzaToCart;
+using PizzaStore.Application.Features.Cart.Commands.UpdateCartItemQuantity;
+using PizzaStore.Application.Features.Cart.Commands.IncreaseCartItemQuantity;
+using PizzaStore.Application.Features.Cart.Commands.DecreaseCartItemQuantity;
+using PizzaStore.Application.Features.Cart.Commands.RemoveCartItem;
+using PizzaStore.Application.Features.Cart.Commands.ClearCart;
+using PizzaStore.Application.Features.Cart.Queries.GetUserCart;
+using PizzaStore.Application.Features.Cart.Queries.GetCartItem;
 
 namespace PizzaStore.API.Controllers;
 

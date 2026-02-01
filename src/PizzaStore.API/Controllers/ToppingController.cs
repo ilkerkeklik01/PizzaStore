@@ -1,11 +1,11 @@
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using PizzaStore.Application.Features.Commands.Topping.CreateTopping;
-using PizzaStore.Application.Features.Commands.Topping.UpdateTopping;
-using PizzaStore.Application.Features.Commands.Topping.DeleteTopping;
-using PizzaStore.Application.Features.Queries.Topping;
-using PizzaStore.Application.Features.Queries.Topping.DTOs;
+using PizzaStore.Application.Features.Topping.Commands.CreateTopping;
+using PizzaStore.Application.Features.Topping.Commands.UpdateTopping;
+using PizzaStore.Application.Features.Topping.Commands.DeleteTopping;
+using PizzaStore.Application.Features.Topping.Queries;
+using PizzaStore.Application.Features.Topping.Queries.DTOs;
 
 namespace PizzaStore.API.Controllers;
 

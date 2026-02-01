@@ -5,6 +5,65 @@ All notable changes to the PizzaStore project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.3.0] - 2026-02-01
+
+### 🏗️ Major Architecture Refactoring - Context-First Organization
+
+This release restructures the entire application to follow a context-first organization pattern, significantly improving maintainability and discoverability of related features.
+
+### 🔄 Changed
+
+#### Directory Structure Reorganization
+- **Restructured Application Layer** - Reorganized 104+ handler files to group by business context
+  - **Old Structure:** `Features/Commands/{Context}` and `Features/Queries/{Context}`
+  - **New Structure:** `Features/{Context}/Commands` and `Features/{Context}/Queries`
+  - **Affected Contexts:** Admin, Auth, Pizza, Cart, Order, PizzaVariant, Topping
+  - All related commands and queries for a context are now co-located
+
+#### Namespace Updates
+- **Updated all namespaces** to reflect new directory structure (143 files)
+  - Example: `PizzaStore.Application.Features.Commands.Admin.UpdateOrderStatus`
+  - Becomes: `PizzaStore.Application.Features.Admin.Commands.UpdateOrderStatus`
+- **Updated all using statements** across src/ and tests/ directories
+- **Updated Program.cs** to reference new namespace paths
+
+#### Test Structure Alignment
+- **Restructured Test Project** - Tests now mirror the new handler organization
+  - Moved all 32 test files to match new structure
+  - Updated test namespaces to align with handler namespaces
+  - Tests remain co-located with their corresponding handlers
+
+### 🎯 Benefits
+
+- **Improved Discoverability** - All features for a context (Admin, Pizza, etc.) are now in one place
+- **Better Maintainability** - Easier to navigate and understand related features
+- **Context Boundaries** - Clear separation of business contexts
+- **Preserved History** - All moves performed with `git mv` to maintain file history
+
+### ✅ Verification
+
+- ✅ **Build Status:** Clean build with 0 errors
+- ✅ **Test Status:** All 193 tests passing
+- ✅ **Files Changed:** 143 files (handlers + tests + controllers)
+- ✅ **Git History:** File history preserved with proper git moves
+
+### 📁 New Structure Example
+
+```
+Features/
+  Admin/
+    Commands/
+      UpdateOrderStatus/
+        UpdateOrderStatusCommand.cs
+        UpdateOrderStatusCommandHandler.cs
+        UpdateOrderStatusCommandValidator.cs
+    Queries/
+      GetAllOrders/
+      GetAllUsers/
+      GetOrdersByUserId/
+      GetUserById/
+```
+
 ## [3.2.0] - 2026-02-01
 
 ### 🧪 Comprehensive Unit Test Implementation

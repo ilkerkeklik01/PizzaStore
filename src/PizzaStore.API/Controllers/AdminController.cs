@@ -1,13 +1,13 @@
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using PizzaStore.Application.Features.Commands.Admin.UpdateOrderStatus;
-using PizzaStore.Application.Features.Queries.Admin;
-using PizzaStore.Application.Features.Queries.Admin.GetAllUsers;
-using PizzaStore.Application.Features.Queries.Admin.GetUserById;
-using PizzaStore.Application.Features.Queries.Admin.GetOrdersByUserId;
-using PizzaStore.Application.Features.Queries.Admin.GetAllOrders;
-using PizzaStore.Application.Features.Queries.Order;
+using PizzaStore.Application.Features.Admin.Commands.UpdateOrderStatus;
+using PizzaStore.Application.Features.Admin.Queries;
+using PizzaStore.Application.Features.Admin.Queries.GetAllUsers;
+using PizzaStore.Application.Features.Admin.Queries.GetUserById;
+using PizzaStore.Application.Features.Admin.Queries.GetOrdersByUserId;
+using PizzaStore.Application.Features.Admin.Queries.GetAllOrders;
+using PizzaStore.Application.Features.Order.Queries;
 using PizzaStore.Domain.Entities;
 
 namespace PizzaStore.API.Controllers;

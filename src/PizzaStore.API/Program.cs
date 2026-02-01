@@ -31,10 +31,10 @@ builder.Services.AddControllers()
     });
 
 // Add MediatR
-builder.Services.AddMediatR(cfg => cfg.RegisterServicesFromAssembly(typeof(PizzaStore.Application.Features.Commands.Auth.Register.RegisterUserCommand).Assembly));
+builder.Services.AddMediatR(cfg => cfg.RegisterServicesFromAssembly(typeof(PizzaStore.Application.Features.Auth.Commands.Register.RegisterUserCommand).Assembly));
 
 // Add FluentValidation
-builder.Services.AddValidatorsFromAssembly(typeof(PizzaStore.Application.Features.Commands.Auth.Register.RegisterUserDtoValidator).Assembly);
+builder.Services.AddValidatorsFromAssembly(typeof(PizzaStore.Application.Features.Auth.Commands.Register.RegisterUserDtoValidator).Assembly);
 
 // Add Application services (CurrentUserService, etc.)
 builder.Services.AddApplicationServices();

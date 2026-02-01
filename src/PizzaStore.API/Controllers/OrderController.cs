@@ -1,11 +1,11 @@
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using PizzaStore.Application.Features.Commands.Order.CheckoutCart;
-using PizzaStore.Application.Features.Commands.Order.CancelOrder;
-using PizzaStore.Application.Features.Queries.Order;
-using PizzaStore.Application.Features.Queries.Order.GetMyOrders;
-using PizzaStore.Application.Features.Queries.Order.GetOrderById;
+using PizzaStore.Application.Features.Order.Commands.CheckoutCart;
+using PizzaStore.Application.Features.Order.Commands.CancelOrder;
+using PizzaStore.Application.Features.Order.Queries;
+using PizzaStore.Application.Features.Order.Queries.GetMyOrders;
+using PizzaStore.Application.Features.Order.Queries.GetOrderById;
 
 namespace PizzaStore.API.Controllers;
 

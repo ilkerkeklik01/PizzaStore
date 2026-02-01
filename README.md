@@ -29,18 +29,40 @@ This solution follows **Clean Architecture** with enhanced separation of concern
 PizzaStore/
 ├── src/
 │   ├── PizzaStore.Domain/                           # Core business entities and interfaces
-│   ├── PizzaStore.Application/                      # Business logic (Feature-based organization)
+│   ├── PizzaStore.Application/                      # Business logic (Context-based organization)
 │   │   └── Features/
-│   │       ├── Commands/                            # Write operations
-│   │       │   └── Auth/
+│   │       ├── Admin/                               # Admin context
+│   │       │   ├── Commands/                        # Admin write operations
+│   │       │   │   └── UpdateOrderStatus/           # Feature: Update Order Status
+│   │       │   │       ├── UpdateOrderStatusCommand.cs
+│   │       │   │       ├── UpdateOrderStatusCommandHandler.cs
+│   │       │   │       └── UpdateOrderStatusCommandValidator.cs
+│   │       │   └── Queries/                         # Admin read operations
+│   │       │       ├── GetAllOrders/
+│   │       │       ├── GetAllUsers/
+│   │       │       ├── GetOrdersByUserId/
+│   │       │       └── GetUserById/
+│   │       ├── Auth/                                # Authentication context
+│   │       │   └── Commands/
 │   │       │       ├── Register/                    # Feature: User Registration
 │   │       │       │   ├── RegisterUserCommand.cs
 │   │       │       │   ├── RegisterUserCommandHandler.cs
-│   │       │       │   ├── RegisterUserDto.cs
 │   │       │       │   └── RegisterUserDtoValidator.cs
 │   │       │       └── Login/                       # Feature: User Login
-│   │       └── Queries/                             # Read operations
-│   │           └── Users/
+│   │       ├── Pizza/                               # Pizza management context
+│   │       │   ├── Commands/
+│   │       │   └── Queries/
+│   │       ├── Cart/                                # Shopping cart context
+│   │       │   ├── Commands/
+│   │       │   └── Queries/
+│   │       ├── Order/                               # Order management context
+│   │       │   ├── Commands/
+│   │       │   └── Queries/
+│   │       ├── PizzaVariant/                        # Pizza variant context
+│   │       │   └── Commands/
+│   │       └── Topping/                             # Topping management context
+│   │           ├── Commands/
+│   │           └── Queries/
 │   ├── PizzaStore.Core.Auth/                        # Authentication & Authorization
 │   │   ├── Services/                                # AuthService, JwtTokenGenerator
 │   │   ├── DTOs/                                    # Auth-related DTOs
@@ -58,6 +80,16 @@ PizzaStore/
 └── tests/
     ├── PizzaStore.API.Tests/
     ├── PizzaStore.Application.Tests/
+    │   └── Features/                                # Tests mirror handler structure
+    │       ├── Admin/
+    │       │   ├── Commands/
+    │       │   └── Queries/
+    │       ├── Auth/
+    │       ├── Pizza/
+    │       ├── Cart/
+    │       ├── Order/
+    │       ├── PizzaVariant/
+    │       └── Topping/
     ├── PizzaStore.Domain.Tests/
     ├── PizzaStore.Core.Auth.Tests/
     ├── PizzaStore.Core.CrossCuttingConcerns.Tests/
@@ -76,9 +108,10 @@ PizzaStore/
 
 ### Architecture & Design
 - ✅ **Clean Architecture** - Separation of concerns with proper dependency flow
-- ✅ **Vertical Slice Architecture** - Feature-based organization (all related components grouped together)
+- ✅ **Context-First Organization** - Features organized by business context (Admin, Auth, Pizza, Cart, Order, etc.)
+- ✅ **Vertical Slice Architecture** - All components for a feature grouped together within context
 - ✅ **CQRS Pattern** - Complete separation of commands (write) and queries (read) using MediatR
-- ✅ **33+ Handlers** - Command and query handlers for all operations
+- ✅ **33+ Handlers** - Command and query handlers organized by business context
 - ✅ **SOLID Principles** - Single Responsibility, Open/Closed, Liskov Substitution, Interface Segregation, Dependency Inversion
 - ✅ **DRY Principle** - Don't Repeat Yourself - modular and reusable components
 - ✅ **Modular Design** - Separate Core projects for Auth, CrossCuttingConcerns, and Persistence
@@ -353,10 +386,11 @@ The application automatically seeds data on startup:
 
 **Application**
 - Depends only on Domain
-- Contains business logic organized by features (Vertical Slice Architecture)
+- Contains business logic organized by business context (Context-First Architecture)
 - **33+ Handlers** implementing CQRS pattern
-- Feature structure: `Features/{Commands|Queries}/{Entity}/{Action}/`
+- Feature structure: `Features/{Context}/{Commands|Queries}/{Action}/`
 - Each feature contains: Command/Query, Handler, DTO, Validator
+- **Business Contexts:** Admin, Auth, Pizza, Cart, Order, PizzaVariant, Topping
 
 **Handlers Overview:**
 ```
@@ -443,7 +477,8 @@ Queries (Read Operations):
 ### Design Patterns & Principles
 
 - **CQRS:** Commands and Queries separated via MediatR
-- **Vertical Slice Architecture:** All components for a feature grouped together
+- **Context-First Architecture:** Features organized by business context for better maintainability
+- **Vertical Slice Architecture:** All components for a feature grouped together within context
 - **Repository Pattern:** Abstraction over data access
 - **Unit of Work:** Transaction management
 - **Dependency Injection:** Loose coupling, extension methods per project
@@ -458,7 +493,7 @@ Queries (Read Operations):
 ### Naming Conventions
 
 - **Projects:** `PizzaStore.{Layer}.{Module}` (e.g., `PizzaStore.Core.Auth`)
-- **Namespaces:** Match folder structure (e.g., `PizzaStore.Application.Features.Commands.Auth.Register`)
+- **Namespaces:** Match folder structure (e.g., `PizzaStore.Application.Features.Auth.Commands.Register`)
 - **Features:** `{Action}{Entity}{Type}` (e.g., `RegisterUserCommand`, `LoginUserCommandHandler`)
 - **DTOs:** `{Action}{Entity}Dto` (e.g., `RegisterUserDto`, `AuthResponseDto`)
 - **Validators:** `{Dto}Validator` (e.g., `RegisterUserDtoValidator`)
@@ -576,7 +611,14 @@ To add a new feature following the established architecture:
 
 1. **Create Feature Folder Structure**
    ```
-   src/PizzaStore.Application/Features/Commands/Pizza/CreatePizza/
+   src/PizzaStore.Application/Features/{Context}/Commands/{Action}/
+   ├── {Action}Command.cs
+   ├── {Action}CommandHandler.cs
+   ├── {Action}Dto.cs
+   └── {Action}DtoValidator.cs
+   
+   Example:
+   src/PizzaStore.Application/Features/Pizza/Commands/CreatePizza/
    ├── CreatePizzaCommand.cs
    ├── CreatePizzaCommandHandler.cs
    ├── CreatePizzaDto.cs
@@ -597,7 +639,7 @@ To add a new feature following the established architecture:
    - Add XML documentation comments
 
 5. **Write Tests**
-   - Add tests in appropriate test project
+   - Add tests in `tests/PizzaStore.Application.Tests/Features/{Context}/{Commands|Queries}/`
    - Follow AAA pattern (Arrange, Act, Assert)
 
 ## 🚀 Next Steps & Enhancements

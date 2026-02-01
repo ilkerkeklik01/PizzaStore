@@ -1,14 +1,14 @@
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using PizzaStore.Application.Features.Commands.Pizza.CreatePizza;
-using PizzaStore.Application.Features.Commands.Pizza.UpdatePizza;
-using PizzaStore.Application.Features.Commands.Pizza.DeletePizza;
-using PizzaStore.Application.Features.Commands.PizzaVariant.AddPizzaVariant;
-using PizzaStore.Application.Features.Commands.PizzaVariant.UpdatePizzaVariant;
-using PizzaStore.Application.Features.Commands.PizzaVariant.DeletePizzaVariant;
-using PizzaStore.Application.Features.Queries.Pizza;
-using PizzaStore.Application.Features.Queries.Pizza.DTOs;
+using PizzaStore.Application.Features.Pizza.Commands.CreatePizza;
+using PizzaStore.Application.Features.Pizza.Commands.UpdatePizza;
+using PizzaStore.Application.Features.Pizza.Commands.DeletePizza;
+using PizzaStore.Application.Features.PizzaVariant.Commands.AddPizzaVariant;
+using PizzaStore.Application.Features.PizzaVariant.Commands.UpdatePizzaVariant;
+using PizzaStore.Application.Features.PizzaVariant.Commands.DeletePizzaVariant;
+using PizzaStore.Application.Features.Pizza.Queries;
+using PizzaStore.Application.Features.Pizza.Queries.DTOs;
 using PizzaStore.Domain.Entities;
 
 namespace PizzaStore.API.Controllers;
