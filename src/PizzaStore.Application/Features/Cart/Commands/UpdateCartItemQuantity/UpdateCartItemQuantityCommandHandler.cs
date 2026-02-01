@@ -48,7 +48,7 @@ public class UpdateCartItemQuantityCommandHandler : IRequestHandler<UpdateCartIt
 
         // Update quantity and special instructions
         cartItem.Quantity = request.Dto.Quantity;
-        if (!string.IsNullOrEmpty(request.Dto.SpecialInstructions))
+        if (request.Dto.SpecialInstructions != null)
             cartItem.SpecialInstructions = request.Dto.SpecialInstructions;
 
         // Save changes - EF Core tracks changes automatically

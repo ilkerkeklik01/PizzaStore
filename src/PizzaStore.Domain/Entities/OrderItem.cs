@@ -18,7 +18,7 @@ public class OrderItem : BaseEntity
     public int Quantity { get; set; }
 
     [MaxLength(500)]
-    public string? SpecialInstructions { get; set; } = string.Empty;
+    public string? SpecialInstructions { get; set; }
 
     public decimal SubtotalAtOrder { get; set; }
     

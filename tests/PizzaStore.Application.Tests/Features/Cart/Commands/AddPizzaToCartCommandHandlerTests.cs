@@ -105,7 +105,7 @@ public class AddPizzaToCartCommandHandlerTests
                     PizzaVariantId = pizzaVariant.Id,
                     PizzaVariant = pizzaVariant,
                     Quantity = dto.Quantity,
-                    SpecialInstructions = dto.SpecialInstructions ?? string.Empty,
+                    SpecialInstructions = dto.SpecialInstructions,
                     CartItemToppings = new List<CartItemTopping>()
                 };
                 return item;
@@ -217,7 +217,7 @@ public class AddPizzaToCartCommandHandlerTests
                     PizzaVariantId = pizzaVariant.Id,
                     PizzaVariant = pizzaVariant,
                     Quantity = dto.Quantity,
-                    SpecialInstructions = dto.SpecialInstructions ?? string.Empty,
+                    SpecialInstructions = dto.SpecialInstructions,
                     CartItemToppings = new List<Domain.Entities.CartItemTopping>
                     {
                         new() { CartItemId = id, ToppingId = topping1.Id, Topping = topping1 },
@@ -583,7 +583,7 @@ public class AddPizzaToCartCommandHandlerTests
                     PizzaVariantId = pizzaVariant.Id,
                     PizzaVariant = pizzaVariant,
                     Quantity = dto.Quantity,
-                    SpecialInstructions = string.Empty,
+                    SpecialInstructions = null,
                     CartItemToppings = new List<CartItemTopping>()
                 };
                 return item;
@@ -661,7 +661,7 @@ public class AddPizzaToCartCommandHandlerTests
                     PizzaVariantId = pizzaVariant.Id,
                     PizzaVariant = pizzaVariant,
                     Quantity = dto.Quantity,
-                    SpecialInstructions = string.Empty,
+                    SpecialInstructions = null,
                     CartItemToppings = new List<CartItemTopping>()
                 };
                 return item;

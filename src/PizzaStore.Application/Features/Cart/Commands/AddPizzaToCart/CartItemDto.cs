@@ -53,7 +53,7 @@ public class CartItemDto
     /// Optional special instructions or customization notes from the customer
     /// </summary>
     /// <example>Extra cheese, well done</example>
-    public string SpecialInstructions { get; set; } = string.Empty;
+    public string? SpecialInstructions { get; set; }
     
     /// <summary>
     /// List of toppings added to this cart item

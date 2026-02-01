@@ -80,7 +80,7 @@ public class AddPizzaToCartCommandHandler : IRequestHandler<AddPizzaToCartComman
             CartId = cart.Id,
             PizzaVariantId = request.Dto.PizzaVariantId,
             Quantity = request.Dto.Quantity,
-            SpecialInstructions = request.Dto.SpecialInstructions ?? string.Empty
+            SpecialInstructions = request.Dto.SpecialInstructions
         };
 
         // Add cart item to context (not saved yet)

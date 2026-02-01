@@ -117,7 +117,7 @@ public class CartItemBuilder
         CartId = Guid.NewGuid().ToString(),
         PizzaVariantId = Guid.NewGuid().ToString(),
         Quantity = 1,
-        SpecialInstructions = "",
+        SpecialInstructions = null,
         CartItemToppings = new List<CartItemTopping>()
     };
 
@@ -188,7 +188,7 @@ public class OrderItemBuilder
         PizzaSizeAtOrder = "Medium",
         PizzaBasePriceAtOrder = 12.99m,
         Quantity = 1,
-        SpecialInstructions = "",
+        SpecialInstructions = null,
         SubtotalAtOrder = 12.99m,
         OrderItemToppings = new List<OrderItemTopping>()
     };

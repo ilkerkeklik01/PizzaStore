@@ -14,7 +14,7 @@ public class CartItem : BaseEntity
     public int Quantity { get; set; }
 
     [MaxLength(500)]
-    public string? SpecialInstructions { get; set; } = string.Empty;
+    public string? SpecialInstructions { get; set; }
     
     public ICollection<CartItemTopping> CartItemToppings { get; set; } = new List<CartItemTopping>();
 }
