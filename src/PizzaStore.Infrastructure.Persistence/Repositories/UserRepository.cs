@@ -13,11 +13,11 @@ public class UserRepository : Repository<ApplicationUser>, IUserRepository
 
     public async Task<ApplicationUser?> GetByEmailAsync(string email)
     {
-        return await _dbSet.FirstOrDefaultAsync(u => u.Email == email);
+        return await _dbSet.AsNoTracking().FirstOrDefaultAsync(u => u.Email == email);
     }
 
     public async Task<bool> ExistsAsync(string email)
     {
-        return await _dbSet.AnyAsync(u => u.Email == email);
+        return await _dbSet.AsNoTracking().AnyAsync(u => u.Email == email);
     }
 }

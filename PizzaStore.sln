@@ -13,7 +13,6 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PizzaStore.API", "src\Pizza
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "tests", "tests", "{0AB3BF05-4346-4AA6-1389-037BE0695223}"
 EndProject
-EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PizzaStore.Core.Auth", "src\PizzaStore.Core.Auth\PizzaStore.Core.Auth.csproj", "{A0B5366B-8F6B-4C0F-BC2A-3C6817E6B62A}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PizzaStore.Core.CrossCuttingConcerns", "src\PizzaStore.Core.CrossCuttingConcerns\PizzaStore.Core.CrossCuttingConcerns.csproj", "{95A55725-97F0-43DA-8341-0C5E5AEFC7EF}"

@@ -1,6 +1,23 @@
-# PizzaStore - Clean Architecture .NET 10 API
+# 🍕 PizzaStore - Clean Architecture .NET 10 API
 
-A full-featured .NET 10 Web API built with **Clean Architecture** and **Vertical Slice Architecture** principles, demonstrating authentication, authorization, SOLID principles, and enterprise-grade best practices.
+A complete, production-ready .NET 10 Web API for a pizza ordering system built with **Clean Architecture** and **Vertical Slice Architecture** principles, featuring authentication, authorization, CQRS with MediatR, and enterprise-grade best practices.
+
+## 📋 Table of Contents
+- [Overview](#-overview)
+- [Features](#-features)
+- [Architecture](#-architecture)
+- [Technology Stack](#-technology-stack)
+- [Getting Started](#-getting-started)
+- [API Endpoints](#-api-endpoints)
+- [Authentication & Authorization](#-authentication--authorization)
+- [Seed Data](#-seed-data)
+- [Testing](#-testing)
+- [Project Structure](#-project-structure)
+- [Design Patterns](#-design-patterns--principles)
+
+## 🌟 Overview
+
+PizzaStore is a comprehensive pizza ordering API with full CRUD operations for pizzas, toppings, shopping cart management, and order processing. The application demonstrates industry-standard practices with 33+ command/query handlers, 6 controllers, and 31 API endpoints.
 
 ## 🏗️ Architecture
 
@@ -47,11 +64,21 @@ PizzaStore/
     └── PizzaStore.Infrastructure.Persistence.Tests/
 ```
 
-## 🔑 Features
+## 🎯 Features
+
+### Domain Features
+- ✅ **Pizza Management** - Full CRUD operations with variants (Small, Medium, Large, ExtraLarge)
+- ✅ **Topping Management** - Create, update, delete toppings with pricing
+- ✅ **Shopping Cart** - Add pizzas with toppings, update quantities, manage cart items
+- ✅ **Order Processing** - Checkout cart, view order history, cancel orders
+- ✅ **User Management** - Registration, login, profile management
+- ✅ **Admin Dashboard** - User management, order tracking, status updates
 
 ### Architecture & Design
 - ✅ **Clean Architecture** - Separation of concerns with proper dependency flow
 - ✅ **Vertical Slice Architecture** - Feature-based organization (all related components grouped together)
+- ✅ **CQRS Pattern** - Complete separation of commands (write) and queries (read) using MediatR
+- ✅ **33+ Handlers** - Command and query handlers for all operations
 - ✅ **SOLID Principles** - Single Responsibility, Open/Closed, Liskov Substitution, Interface Segregation, Dependency Inversion
 - ✅ **DRY Principle** - Don't Repeat Yourself - modular and reusable components
 - ✅ **Modular Design** - Separate Core projects for Auth, CrossCuttingConcerns, and Persistence
@@ -61,14 +88,29 @@ PizzaStore/
 ### Technical Features
 - ✅ **ASP.NET Core Identity** - Full authentication system with PBKDF2 password hashing
 - ✅ **JWT Bearer Authentication** - Stateless authentication with JWT tokens
-- ✅ **Role-based Authorization** - User and Admin roles
-- ✅ **MediatR (CQRS Pattern)** - Command/Query separation with handlers
+- ✅ **Role-based Authorization** - User and Admin roles with endpoint protection
+- ✅ **MediatR (CQRS Pattern)** - Command/Query separation with 33+ handlers
 - ✅ **Repository + Unit of Work** - Data access abstraction with transaction support
 - ✅ **Global Exception Handling** - Centralized error handling middleware
 - ✅ **FluentValidation** - Input validation with per-feature validators
 - ✅ **EF Core In-Memory Database** - For development and testing
 - ✅ **Swagger/OpenAPI** - Interactive API documentation with JWT Bearer support
 - ✅ **.env Configuration** - Secure configuration management
+- ✅ **Soft Deletes** - Data retention with IsDeleted flag
+- ✅ **Auditing** - CreatedAt, UpdatedAt timestamps on all entities
+
+## 🛠️ Technology Stack
+
+- **.NET 10** - Latest .NET framework
+- **ASP.NET Core Web API** - RESTful API framework
+- **ASP.NET Core Identity** - Authentication and user management
+- **Entity Framework Core 10** (In-Memory) - ORM and data access
+- **MediatR 12.4.1** - CQRS implementation with pipeline behaviors
+- **FluentValidation 11.11.0** - Input validation
+- **JWT Bearer Authentication** - Stateless token-based auth
+- **Swashbuckle 9.0.6** (Swagger/OpenAPI) - API documentation
+- **DotNetEnv 3.1.1** - Environment variable management
+- **xUnit** - Testing framework (ready for test implementation)
 
 ## 🚀 Getting Started
 
@@ -118,106 +160,185 @@ PizzaStore/
 
 ## 📝 Default Users
 
-The application seeds two default users:
+The application seeds two default users on startup:
 
 ### Admin User
-- **Email:** admin@pizzastore.com
-- **Password:** Admin123
+- **Email:** `admin@pizzastore.com`
+- **Password:** `Admin123`
 - **Role:** Admin
+- **Access:** All endpoints including admin-only features
 
 ### Regular User
-- **Email:** user@pizzastore.com
-- **Password:** User123
+- **Email:** `user@pizzastore.com`
+- **Password:** `User123`
 - **Role:** User
+- **Access:** Public and authenticated user endpoints
 
 ## 🔐 API Endpoints
 
-### Authentication
+The API provides **31 endpoints** across **6 controllers**:
 
-#### Register
-```http
-POST /api/auth/register
-Content-Type: application/json
+### 1. Authentication Controller (`/api/auth`)
+| Method | Endpoint | Description | Auth |
+|--------|----------|-------------|------|
+| POST | `/register` | Register a new user | Public |
+| POST | `/login` | Login and receive JWT token | Public |
+| GET | `/me` | Get current user information | Authenticated |
 
-{
-  "firstName": "John",
-  "lastName": "Doe",
-  "email": "john.doe@example.com",
-  "password": "Password123"
-}
-```
+### 2. Pizza Controller (`/api/pizza`)
+| Method | Endpoint | Description | Auth |
+|--------|----------|-------------|------|
+| GET | `/` | Get all pizzas | Public |
+| GET | `/{id}` | Get pizza by ID | Public |
+| GET | `/type/{type}` | Get pizzas by type | Public |
+| POST | `/` | Create pizza with variants | Admin |
+| PUT | `/{id}` | Update pizza | Admin |
+| DELETE | `/{id}` | Soft delete pizza | Admin |
+| POST | `/{id}/variants` | Add variant to pizza | Admin |
+| PUT | `/{pizzaId}/variants/{variantId}` | Update pizza variant | Admin |
+| DELETE | `/{pizzaId}/variants/{variantId}` | Delete pizza variant | Admin |
 
-#### Login
-```http
-POST /api/auth/login
-Content-Type: application/json
+**Pizza Types:** Vegetarian, MeatLovers, Hawaiian, Veggie, Custom, Supreme, Margherita  
+**Pizza Sizes:** Small, Medium, Large, ExtraLarge
 
-{
-  "email": "john.doe@example.com",
-  "password": "Password123"
-}
-```
+### 3. Topping Controller (`/api/topping`)
+| Method | Endpoint | Description | Auth |
+|--------|----------|-------------|------|
+| GET | `/` | Get all toppings | Public |
+| POST | `/` | Create new topping | Admin |
+| PUT | `/{id}` | Update topping | Admin |
+| DELETE | `/{id}` | Soft delete topping | Admin |
 
-**Response:**
-```json
-{
-  "token": "eyJhbGc...",
-  "user": {
-    "id": "...",
-    "firstName": "John",
-    "lastName": "Doe",
-    "email": "john.doe@example.com"
-  }
-}
-```
+### 4. Cart Controller (`/api/cart`)
+| Method | Endpoint | Description | Auth |
+|--------|----------|-------------|------|
+| GET | `/` | Get user's cart | Authenticated |
+| POST | `/items` | Add pizza to cart | Authenticated |
+| GET | `/items/{cartItemId}` | Get cart item | Authenticated |
+| PUT | `/items/{cartItemId}` | Update cart item quantity | Authenticated |
+| PATCH | `/items/{cartItemId}/increase` | Increase quantity by 1 | Authenticated |
+| PATCH | `/items/{cartItemId}/decrease` | Decrease quantity by 1 | Authenticated |
+| DELETE | `/items/{cartItemId}` | Remove item from cart | Authenticated |
+| DELETE | `/` | Clear entire cart | Authenticated |
 
-#### Get Current User
-```http
-GET /api/auth/me
-Authorization: Bearer {your-jwt-token}
-```
+### 5. Order Controller (`/api/order`)
+| Method | Endpoint | Description | Auth |
+|--------|----------|-------------|------|
+| POST | `/checkout` | Checkout cart & create order | Authenticated |
+| GET | `/` | Get user's orders | Authenticated |
+| GET | `/{id}` | Get order by ID | Authenticated |
+| POST | `/{id}/cancel` | Cancel order | Authenticated |
 
-### Pizza Endpoints
+### 6. Admin Controller (`/api/admin`)
+| Method | Endpoint | Description | Auth |
+|--------|----------|-------------|------|
+| GET | `/users` | Get all users | Admin |
+| GET | `/users/{id}` | Get user by ID | Admin |
+| GET | `/users/{id}/orders` | Get orders by user ID | Admin |
+| GET | `/orders` | Get all orders (with filters) | Admin |
+| PUT | `/orders/{id}/status` | Update order status | Admin |
 
-#### Get All Pizzas (Authenticated)
-```http
-GET /api/pizza
-Authorization: Bearer {your-jwt-token}
-```
+**Order Statuses:** Pending, Confirmed, Preparing, OutForDelivery, Delivered, Cancelled
 
-#### Get Admin Data (Admin Only)
-```http
-GET /api/pizza/admin
-Authorization: Bearer {your-jwt-token}
-```
+**Admin Orders Filters:**
+- `?status=Pending` - Filter by order status
+- `?userId={id}` - Filter by user
+- `?fromDate=2024-01-01&toDate=2024-12-31` - Filter by date range
+- Multiple filters can be combined
 
-## 🔒 Security Features
+## 🔒 Authentication & Authorization
 
-### Password Security
+### How to Use the API
+
+1. **Login:** POST to `/api/auth/login` with email and password
+2. **Get Token:** Copy the JWT token from the response
+3. **Authorize:** Add header `Authorization: Bearer {token}` to authenticated requests
+4. **Access:** User role can access user endpoints, Admin role can access all endpoints
+
+### Security Features
+
+#### Password Security
 - **Algorithm:** PBKDF2 with HMAC-SHA256
 - **Iterations:** 10,000
 - **Salt:** 128-bit (auto-generated per user)
 - **Key Length:** 256-bit
 
-### JWT Configuration
+#### JWT Configuration
 - Tokens expire after configured minutes (default: 60)
 - Includes user ID, email, and roles as claims
 - Signed with HMAC-SHA256
+- Configured via `.env` file
 
-### Environment Variables
-- All sensitive data stored in `.env` file
-- `.env` excluded from version control
-- Template provided in `.env.example`
+### Testing with Swagger
 
-## 🧪 Testing with Swagger
-
-1. Start the API
-2. Navigate to Swagger UI
-3. Use the `/api/auth/login` endpoint with a default user
-4. Copy the JWT token from the response
-5. Click "Authorize" button at the top
-6. Enter: `Bearer {your-token}`
+1. Start the API and navigate to Swagger UI
+2. Use `/api/auth/login` endpoint with default credentials
+3. Copy the JWT token from response
+4. Click **"Authorize"** button at top of Swagger UI
+5. Enter the token (without "Bearer" prefix)
+6. Click "Authorize"
 7. Try authenticated endpoints
+
+### Testing with HTTP File
+
+The `PizzaStore.API.http` file contains all 31 endpoints with sample requests:
+1. Login using endpoint 1.2 or 1.3
+2. Copy the JWT token from response
+3. Update the `@token` variable at the top of the file
+4. Execute any authenticated request
+
+## 🌱 Seed Data
+
+The application automatically seeds data on startup:
+
+### Roles
+- Admin
+- User
+
+### Users
+- **Admin:** admin@pizzastore.com / Admin123
+- **User:** user@pizzastore.com / User123
+
+### Toppings (10 items)
+| Name | Price |
+|------|-------|
+| Pepperoni | $1.50 |
+| Mushrooms | $1.00 |
+| Onions | $0.75 |
+| Bell Peppers | $1.00 |
+| Black Olives | $1.25 |
+| Extra Cheese | $2.00 |
+| Bacon | $1.75 |
+| Sausage | $1.50 |
+| Pineapple | $1.00 |
+| Jalapeños | $0.75 |
+
+### Pizzas (5 items with 4 size variants each)
+
+**1. Margherita**
+- Description: Classic pizza with fresh mozzarella, tomatoes, and basil
+- Type: Margherita
+- Prices: Small $8.99 | Medium $12.99 | Large $16.99 | XL $20.99
+
+**2. Pepperoni**
+- Description: Classic pepperoni pizza with mozzarella cheese and tomato sauce
+- Type: MeatLovers
+- Prices: Small $9.99 | Medium $13.99 | Large $17.99 | XL $21.99
+
+**3. Hawaiian**
+- Description: Ham, pineapple, and mozzarella cheese
+- Type: Hawaiian
+- Prices: Small $10.99 | Medium $14.99 | Large $18.99 | XL $22.99
+
+**4. Veggie Supreme**
+- Description: Loaded with mushrooms, onions, bell peppers, olives, and tomatoes
+- Type: Vegetarian
+- Prices: Small $10.49 | Medium $14.49 | Large $18.49 | XL $22.49
+
+**5. Meat Lovers**
+- Description: Loaded with pepperoni, sausage, bacon, and ham
+- Type: MeatLovers
+- Prices: Small $11.99 | Medium $15.99 | Large $19.99 | XL $24.99
 
 ## 📐 Architecture Principles
 
@@ -226,39 +347,96 @@ Authorization: Bearer {your-jwt-token}
 **Domain (Core)**
 - No dependencies on other layers
 - Contains entities and core business interfaces
-- `ApplicationUser`, `ApplicationRole`, `IRepository`, `IUnitOfWork`
+- Entities: `Pizza`, `PizzaVariant`, `Topping`, `Cart`, `CartItem`, `Order`, `OrderItem`, `ApplicationUser`, `ApplicationRole`
+- Enums: `PizzaType`, `PizzaSize`, `OrderStatus`
+- Interfaces: `IRepository<T>`, `IUnitOfWork`
 
 **Application**
-- Depends only on Domain and Core.Auth
-- Contains business logic organized by features
-- Feature-based structure: `Features/Commands/Auth/Register/`
-- Each feature contains: Command, Handler, DTO, Validator (vertical slice)
-- MediatR CQRS pattern implementation
+- Depends only on Domain
+- Contains business logic organized by features (Vertical Slice Architecture)
+- **33+ Handlers** implementing CQRS pattern
+- Feature structure: `Features/{Commands|Queries}/{Entity}/{Action}/`
+- Each feature contains: Command/Query, Handler, DTO, Validator
+
+**Handlers Overview:**
+```
+Commands (Write Operations):
+├── Auth
+│   ├── Register (RegisterUserCommand)
+│   └── Login (LoginUserCommand)
+├── Pizza
+│   ├── CreatePizza
+│   ├── UpdatePizza
+│   └── DeletePizza
+├── PizzaVariant
+│   ├── AddPizzaVariant
+│   ├── UpdatePizzaVariant
+│   └── DeletePizzaVariant
+├── Topping
+│   ├── CreateTopping
+│   ├── UpdateTopping
+│   └── DeleteTopping
+├── Cart
+│   ├── AddPizzaToCart
+│   ├── UpdateCartItemQuantity
+│   ├── IncreaseCartItemQuantity
+│   ├── DecreaseCartItemQuantity
+│   ├── RemoveCartItem
+│   └── ClearCart
+├── Order
+│   ├── CheckoutCart
+│   └── CancelOrder
+└── Admin
+    └── UpdateOrderStatus
+
+Queries (Read Operations):
+├── Pizza
+│   ├── GetAllPizzas
+│   ├── GetPizzaById
+│   └── GetPizzasByType
+├── Topping
+│   └── GetAllToppings
+├── Cart
+│   ├── GetUserCart
+│   └── GetCartItem
+├── Order
+│   ├── GetMyOrders
+│   └── GetOrderById
+└── Admin
+    ├── GetAllUsers
+    ├── GetUserById
+    ├── GetOrdersByUserId
+    └── GetAllOrders
+```
 
 **Core.Auth**
 - Depends on Domain and Core.CrossCuttingConcerns
 - Authentication and authorization services
-- JWT token generation
+- JWT token generation and validation
 - Auth-related DTOs and interfaces
+- Services: `AuthService`, `JwtTokenGenerator`, `CurrentUserService`
 - Self-contained with its own DI registration
 
 **Core.CrossCuttingConcerns**
 - No business dependencies
 - Global exception handling middleware
-- Custom exception types
-- Logging infrastructure (extensible)
+- Custom exception types: `NotFoundException`, `ValidationException`, `UnauthorizedException`
+- Extensible logging infrastructure
 - Self-contained with its own DI registration
 
 **Infrastructure.Persistence**
 - Depends on Domain
-- EF Core DbContext, repositories, data seeding
-- Database configuration and migrations
-- Unit of Work implementation
+- EF Core DbContext with ASP.NET Core Identity integration
+- Repository pattern implementation
+- Unit of Work for transaction management
+- Database initialization and seeding (DbInitializer)
 - Self-contained with its own DI registration
 
 **API (Presentation)**
-- Depends on Application, Core.Auth, Core.CrossCuttingConcerns, Infrastructure.Persistence
-- Controllers, Swagger configuration
+- Depends on all other layers
+- **6 Controllers:** Auth, Pizza, Topping, Cart, Order, Admin
+- **31 Endpoints** with proper HTTP verbs and status codes
+- Swagger/OpenAPI configuration with JWT support
 - Entry point and composition root
 - Uses extension methods from all Core/Infrastructure projects
 
@@ -292,12 +470,12 @@ Authorization: Bearer {your-jwt-token}
 - **.NET 10** - Latest .NET framework
 - **ASP.NET Core Web API** - RESTful API framework
 - **ASP.NET Core Identity** - Authentication and user management
-- **Entity Framework Core** (In-Memory) - ORM and data access
-- **MediatR** - CQRS implementation
-- **FluentValidation** - Input validation
+- **Entity Framework Core 10** (In-Memory) - ORM and data access
+- **MediatR 12.4.1** - CQRS implementation with pipeline behaviors
+- **FluentValidation 11.11.0** - Input validation
 - **JWT Bearer Authentication** - Stateless token-based auth
 - **Swashbuckle 9.0.6** (Swagger/OpenAPI) - API documentation
-- **DotNetEnv** - Environment variable management
+- **DotNetEnv 3.1.1** - Environment variable management
 - **xUnit** - Testing framework (ready for test implementation)
 
 ## 🧪 Testing
@@ -342,52 +520,89 @@ To add a new feature following the established architecture:
 4. **Add Controller Endpoint**
    - Create/update controller in `src/PizzaStore.API/Controllers/`
    - Use MediatR to send commands/queries
+   - Add XML documentation comments
 
 5. **Write Tests**
    - Add tests in appropriate test project
    - Follow AAA pattern (Arrange, Act, Assert)
 
-## 🚀 Next Steps
+## 🚀 Next Steps & Enhancements
 
-To extend this application:
-
-1. **Add Pizza Domain**
-   - Create `Pizza`, `Order`, `OrderItem` entities in Domain
-   - Add corresponding repositories and feature folders
-   - Implement CRUD operations
-
-2. **Switch to Real Database**
+### Database
+1. **Switch to Real Database**
    - Replace In-Memory with SQL Server/PostgreSQL
    - Add EF Core migrations
    - Update `PersistenceServiceExtensions.cs`
 
-3. **Add Refresh Tokens**
+### Authentication
+2. **Add Refresh Tokens**
    - Extend `Core.Auth` with refresh token service
    - Add token refresh endpoint in AuthController
    - Store refresh tokens in database
 
-4. **Implement Unit Tests**
-   - Test MediatR handlers with mocked dependencies
-   - Test repositories with in-memory database
-   - Test validators with FluentValidation test extensions
+3. **Add Email Confirmation**
+   - Implement email service
+   - Add email verification flow
+   - Send confirmation emails on registration
 
-5. **Add Advanced Logging**
-   - Integrate Serilog or NLog in `Core.CrossCuttingConcerns`
+### Features
+4. **Payment Integration**
+   - Add payment domain entities
+   - Integrate Stripe/PayPal
+   - Implement payment processing commands
+
+5. **Real-time Updates**
+   - Add SignalR for order status updates
+   - Implement notifications hub
+   - Real-time cart updates
+
+6. **File Upload**
+   - Add image upload for pizzas
+   - Store images in blob storage (Azure/AWS S3)
+   - Generate thumbnails
+
+### Testing & Quality
+7. **Comprehensive Testing**
+   - Unit tests for handlers with mocked dependencies
+   - Integration tests with TestServer
+   - Repository tests with in-memory database
+   - Validator tests with FluentValidation test extensions
+   - Achieve >80% code coverage
+
+8. **Advanced Logging**
+   - Integrate Serilog or NLog
    - Add structured logging
-   - Log to file/database/cloud
+   - Log to file/database/cloud (Seq, Application Insights)
 
-6. **Add API Versioning**
-   - Implement versioning strategy (URL/header/media type)
-   - Version controllers appropriately
-
-7. **Add Caching**
+### Performance & Scalability
+9. **Add Caching**
    - Implement Redis distributed cache
-   - Add caching middleware in `Core.CrossCuttingConcerns`
+   - Cache frequently accessed data (pizzas, toppings)
+   - Add cache invalidation strategies
+
+10. **API Versioning**
+    - Implement versioning strategy (URL/header/media type)
+    - Version controllers appropriately
+    - Maintain backward compatibility
+
+11. **Rate Limiting**
+    - Add rate limiting middleware
+    - Protect against abuse
+    - Configure per-endpoint limits
 
 ## 📄 License
 
 This is a demonstration project for learning purposes.
 
+## 📖 Additional Documentation
+
+- **QUICK_REFERENCE.md** - Quick reference for common operations
+- **CART_FEATURES_SUMMARY.md** - Detailed cart feature documentation
+- **CART_INDEX.md** - Cart implementation index
+- **IMPLEMENTATION_DETAILS.md** - Technical implementation details
+- **CHANGELOG.md** - Version history and changes
+- **PizzaStore.API.http** - Complete HTTP request collection for all 31 endpoints
+
 ## 👨‍💻 Author
 
-Built with Clean Architecture best practices and industry-standard security patterns.
+Built with Clean Architecture best practices, CQRS pattern, and industry-standard security patterns.

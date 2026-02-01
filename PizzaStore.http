@@ -1,0 +1,446 @@
+### PizzaStore API Test Collection
+### Use this file with VS Code REST Client extension or copy to Postman
+### https://localhost:7030
+
+@baseUrl = https://localhost:7030/api
+@adminEmail = admin@pizzastore.com
+@adminPassword = Admin123!
+
+# Variables (will be set after requests)
+@userToken = 
+@adminToken = 
+@pizzaId = 
+@variantId = 
+@cartItemId = 
+@orderId = 
+
+###############################################
+## 🔐 AUTHENTICATION TESTS
+###############################################
+
+### 1. Register New User
+POST {{baseUrl}}/auth/register
+Content-Type: application/json
+
+{
+  "email": "testuser@example.com",
+  "username": "testuser",
+  "password": "Test123!",
+  "firstName": "Test",
+  "lastName": "User"
+}
+
+### 2. Login as Regular User (Save token)
+# @name loginUser
+POST {{baseUrl}}/auth/login
+Content-Type: application/json
+
+{
+  "email": "testuser@example.com",
+  "password": "Test123!"
+}
+
+### 3. Login as Admin (Save token for admin tests)
+# @name loginAdmin
+POST {{baseUrl}}/auth/login
+Content-Type: application/json
+
+{
+  "email": "{{adminEmail}}",
+  "password": "{{adminPassword}}"
+}
+
+###############################################
+## 🍕 PIZZA TESTS (Public - No Auth Required)
+###############################################
+
+### 4. Get All Pizzas (Seeded data)
+GET {{baseUrl}}/pizza
+
+### 5. Get Pizza by ID (Use ID from previous response)
+# @name getPizza
+GET {{baseUrl}}/pizza/1
+
+### 6. Get Pizza Variants (Use pizza ID from above)
+GET {{baseUrl}}/pizza/1/variants
+
+###############################################
+## 🧀 TOPPING TESTS (Public)
+###############################################
+
+### 7. Get All Toppings
+GET {{baseUrl}}/topping
+
+### 8. Get Topping by ID
+GET {{baseUrl}}/topping/1
+
+###############################################
+## 🛒 CART TESTS (Authenticated - Use user token)
+###############################################
+
+### 9. Add Pizza to Cart
+# @name addToCart
+POST {{baseUrl}}/cart/items
+Content-Type: application/json
+Authorization: Bearer {{loginUser.response.body.token}}
+
+{
+  "pizzaVariantId": 1,
+  "quantity": 2,
+  "toppingIds": [1, 2, 3],
+  "specialInstructions": "Extra cheese please"
+}
+
+### 10. Get My Cart
+GET {{baseUrl}}/cart
+Authorization: Bearer {{loginUser.response.body.token}}
+
+### 11. Add Another Pizza (Creates new cart item)
+POST {{baseUrl}}/cart/items
+Content-Type: application/json
+Authorization: Bearer {{loginUser.response.body.token}}
+
+{
+  "pizzaVariantId": 2,
+  "quantity": 1,
+  "toppingIds": [4, 5],
+  "specialInstructions": "Well done"
+}
+
+### 12. Increase Quantity of Cart Item (Use ID from addToCart response)
+PUT {{baseUrl}}/cart/items/1/increase
+Authorization: Bearer {{loginUser.response.body.token}}
+
+### 13. Decrease Quantity
+PUT {{baseUrl}}/cart/items/1/decrease
+Authorization: Bearer {{loginUser.response.body.token}}
+
+### 14. Update Cart Item
+PUT {{baseUrl}}/cart/items/1
+Content-Type: application/json
+Authorization: Bearer {{loginUser.response.body.token}}
+
+{
+  "quantity": 3,
+  "toppingIds": [1, 2],
+  "specialInstructions": "Updated instructions"
+}
+
+### 15. Get Specific Cart Item
+GET {{baseUrl}}/cart/items/1
+Authorization: Bearer {{loginUser.response.body.token}}
+
+### 16. Remove Item from Cart
+DELETE {{baseUrl}}/cart/items/1
+Authorization: Bearer {{loginUser.response.body.token}}
+
+### 17. Clear Entire Cart
+DELETE {{baseUrl}}/cart
+Authorization: Bearer {{loginUser.response.body.token}}
+
+###############################################
+## 📦 ORDER TESTS (Authenticated)
+###############################################
+
+### 18. SETUP: Add items to cart for checkout
+POST {{baseUrl}}/cart/items
+Content-Type: application/json
+Authorization: Bearer {{loginUser.response.body.token}}
+
+{
+  "pizzaVariantId": 1,
+  "quantity": 2,
+  "toppingIds": [1, 2, 3],
+  "specialInstructions": "For checkout test"
+}
+
+### 19. Checkout Cart (Creates order + clears cart atomically)
+# @name checkout
+POST {{baseUrl}}/order/checkout
+Content-Type: application/json
+Authorization: Bearer {{loginUser.response.body.token}}
+
+{
+  "deliveryAddress": "123 Main St, Test City, TC 12345",
+  "phoneNumber": "+1234567890"
+}
+
+### 20. Verify Cart is Empty After Checkout
+GET {{baseUrl}}/cart
+Authorization: Bearer {{loginUser.response.body.token}}
+
+### 21. Get My Orders
+GET {{baseUrl}}/order/my-orders
+Authorization: Bearer {{loginUser.response.body.token}}
+
+### 22. Get Specific Order (Use order ID from checkout response)
+GET {{baseUrl}}/order/{{checkout.response.body.orderId}}
+Authorization: Bearer {{loginUser.response.body.token}}
+
+### 23. Cancel Order (Only if status is Pending)
+DELETE {{baseUrl}}/order/{{checkout.response.body.orderId}}
+Authorization: Bearer {{loginUser.response.body.token}}
+
+###############################################
+## 👤 ADMIN - USER MANAGEMENT TESTS
+###############################################
+
+### 24. Get All Users (Admin Only)
+GET {{baseUrl}}/admin/users
+Authorization: Bearer {{loginAdmin.response.body.token}}
+
+### 25. Get User by ID (Admin Only)
+GET {{baseUrl}}/admin/users/1
+Authorization: Bearer {{loginAdmin.response.body.token}}
+
+### 26. ❌ Try Admin Endpoint Without Admin Role (Should Fail 403)
+GET {{baseUrl}}/admin/users
+Authorization: Bearer {{loginUser.response.body.token}}
+
+###############################################
+## 🍕 ADMIN - PIZZA MANAGEMENT TESTS
+###############################################
+
+### 27. Create New Pizza (Admin Only)
+# @name createPizza
+POST {{baseUrl}}/pizza
+Content-Type: application/json
+Authorization: Bearer {{loginAdmin.response.body.token}}
+
+{
+  "name": "Test Supreme",
+  "description": "Loaded with everything",
+  "imageUrl": "https://example.com/supreme.jpg",
+  "pizzaType": "Meat"
+}
+
+### 28. Update Pizza (Admin Only)
+PUT {{baseUrl}}/pizza/{{createPizza.response.body.id}}
+Content-Type: application/json
+Authorization: Bearer {{loginAdmin.response.body.token}}
+
+{
+  "name": "Updated Supreme",
+  "description": "Updated description",
+  "imageUrl": "https://example.com/supreme-updated.jpg",
+  "pizzaType": "Meat"
+}
+
+### 29. Add Pizza Variant (Admin Only)
+# @name createVariant
+POST {{baseUrl}}/pizza/{{createPizza.response.body.id}}/variants
+Content-Type: application/json
+Authorization: Bearer {{loginAdmin.response.body.token}}
+
+{
+  "size": "Large",
+  "price": 19.99,
+  "isAvailable": true
+}
+
+### 30. Update Pizza Variant (Admin Only)
+PUT {{baseUrl}}/pizza/{{createPizza.response.body.id}}/variants/{{createVariant.response.body.id}}
+Content-Type: application/json
+Authorization: Bearer {{loginAdmin.response.body.token}}
+
+{
+  "price": 21.99,
+  "isAvailable": false
+}
+
+### 31. Delete Pizza Variant (Admin Only)
+DELETE {{baseUrl}}/pizza/{{createPizza.response.body.id}}/variants/{{createVariant.response.body.id}}
+Authorization: Bearer {{loginAdmin.response.body.token}}
+
+### 32. Delete Pizza (Admin Only)
+DELETE {{baseUrl}}/pizza/{{createPizza.response.body.id}}
+Authorization: Bearer {{loginAdmin.response.body.token}}
+
+###############################################
+## 🧀 ADMIN - TOPPING MANAGEMENT TESTS
+###############################################
+
+### 33. Create New Topping (Admin Only)
+# @name createTopping
+POST {{baseUrl}}/topping
+Content-Type: application/json
+Authorization: Bearer {{loginAdmin.response.body.token}}
+
+{
+  "name": "Test Topping",
+  "price": 1.50,
+  "isAvailable": true
+}
+
+### 34. Update Topping (Admin Only)
+PUT {{baseUrl}}/topping/{{createTopping.response.body.id}}
+Content-Type: application/json
+Authorization: Bearer {{loginAdmin.response.body.token}}
+
+{
+  "name": "Updated Test Topping",
+  "price": 2.00,
+  "isAvailable": false
+}
+
+### 35. Delete Topping (Admin Only)
+DELETE {{baseUrl}}/topping/{{createTopping.response.body.id}}
+Authorization: Bearer {{loginAdmin.response.body.token}}
+
+###############################################
+## 📦 ADMIN - ORDER MANAGEMENT TESTS
+###############################################
+
+### 36. Get All Orders (Admin Only)
+GET {{baseUrl}}/admin/orders
+Authorization: Bearer {{loginAdmin.response.body.token}}
+
+### 37. Get Order by ID (Admin Only)
+GET {{baseUrl}}/admin/orders/1
+Authorization: Bearer {{loginAdmin.response.body.token}}
+
+### 38. Update Order Status (Admin Only)
+PUT {{baseUrl}}/admin/orders/1/status
+Content-Type: application/json
+Authorization: Bearer {{loginAdmin.response.body.token}}
+
+{
+  "status": "Preparing"
+}
+
+###############################################
+## ⚠️ BUSINESS RULES VALIDATION TESTS
+###############################################
+
+### 39. ❌ Try to Add 51 Pizzas (Should Fail - Max Quantity is 50)
+POST {{baseUrl}}/cart/items
+Content-Type: application/json
+Authorization: Bearer {{loginUser.response.body.token}}
+
+{
+  "pizzaVariantId": 1,
+  "quantity": 51,
+  "toppingIds": [],
+  "specialInstructions": ""
+}
+
+### 40. ❌ Try to Checkout with Total < $5 (Should Fail)
+# First clear cart and add cheap item
+DELETE {{baseUrl}}/cart
+Authorization: Bearer {{loginUser.response.body.token}}
+
+###
+POST {{baseUrl}}/cart/items
+Content-Type: application/json
+Authorization: Bearer {{loginUser.response.body.token}}
+
+{
+  "pizzaVariantId": 1,
+  "quantity": 1,
+  "toppingIds": [],
+  "specialInstructions": "Cheap order"
+}
+
+###
+POST {{baseUrl}}/order/checkout
+Content-Type: application/json
+Authorization: Bearer {{loginUser.response.body.token}}
+
+{
+  "deliveryAddress": "Test Address",
+  "phoneNumber": "+1234567890"
+}
+
+### 41. ❌ Try to Access Protected Endpoint Without Token (Should Fail 401)
+GET {{baseUrl}}/cart
+
+###############################################
+## 🎯 CRITICAL PATH - FULL USER JOURNEY
+###############################################
+
+### STEP 1: Register
+POST {{baseUrl}}/auth/register
+Content-Type: application/json
+
+{
+  "email": "journey@test.com",
+  "username": "journeyuser",
+  "password": "Test123!",
+  "firstName": "Journey",
+  "lastName": "User"
+}
+
+### STEP 2: Login
+# @name journeyLogin
+POST {{baseUrl}}/auth/login
+Content-Type: application/json
+
+{
+  "email": "journey@test.com",
+  "password": "Test123!"
+}
+
+### STEP 3: Browse Menu
+GET {{baseUrl}}/pizza
+
+### STEP 4: View Pizza Details
+GET {{baseUrl}}/pizza/1
+
+### STEP 5: Add to Cart
+POST {{baseUrl}}/cart/items
+Content-Type: application/json
+Authorization: Bearer {{journeyLogin.response.body.token}}
+
+{
+  "pizzaVariantId": 2,
+  "quantity": 2,
+  "toppingIds": [1, 3, 5],
+  "specialInstructions": "Extra crispy"
+}
+
+### STEP 6: Add Another Pizza
+POST {{baseUrl}}/cart/items
+Content-Type: application/json
+Authorization: Bearer {{journeyLogin.response.body.token}}
+
+{
+  "pizzaVariantId": 5,
+  "quantity": 1,
+  "toppingIds": [2, 4],
+  "specialInstructions": ""
+}
+
+### STEP 7: View Cart
+GET {{baseUrl}}/cart
+Authorization: Bearer {{journeyLogin.response.body.token}}
+
+### STEP 8: Increase Quantity
+PUT {{baseUrl}}/cart/items/1/increase
+Authorization: Bearer {{journeyLogin.response.body.token}}
+
+### STEP 9: Checkout
+# @name journeyCheckout
+POST {{baseUrl}}/order/checkout
+Content-Type: application/json
+Authorization: Bearer {{journeyLogin.response.body.token}}
+
+{
+  "deliveryAddress": "456 Oak Ave, TestVille, TV 54321",
+  "phoneNumber": "+1987654321"
+}
+
+### STEP 10: Verify Cart Empty
+GET {{baseUrl}}/cart
+Authorization: Bearer {{journeyLogin.response.body.token}}
+
+### STEP 11: View Order
+GET {{baseUrl}}/order/my-orders
+Authorization: Bearer {{journeyLogin.response.body.token}}
+
+### STEP 12: Get Order Details
+GET {{baseUrl}}/order/{{journeyCheckout.response.body.orderId}}
+Authorization: Bearer {{journeyLogin.response.body.token}}
+
+###############################################
+## ✅ SUCCESS! All tests complete
+###############################################

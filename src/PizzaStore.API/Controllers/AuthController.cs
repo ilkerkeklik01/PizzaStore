@@ -21,6 +21,10 @@ public class AuthController : ControllerBase
     /// <summary>
     /// Register a new user
     /// </summary>
+    /// <param name="registerDto">User registration information including firstName, lastName, email, and password</param>
+    /// <returns>JWT token and user information</returns>
+    /// <response code="200">Returns the JWT token and user details</response>
+    /// <response code="400">If the registration data is invalid or email already exists</response>
     [HttpPost("register")]
     [ProducesResponseType(typeof(AuthResponseDto), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
@@ -34,6 +38,10 @@ public class AuthController : ControllerBase
     /// <summary>
     /// Login with email and password
     /// </summary>
+    /// <param name="loginDto">User credentials (email and password)</param>
+    /// <returns>JWT token and user information</returns>
+    /// <response code="200">Returns the JWT token and user details</response>
+    /// <response code="401">If the credentials are invalid</response>
     [HttpPost("login")]
     [ProducesResponseType(typeof(AuthResponseDto), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
@@ -47,6 +55,9 @@ public class AuthController : ControllerBase
     /// <summary>
     /// Get current authenticated user information
     /// </summary>
+    /// <returns>Current user's ID, email, and roles</returns>
+    /// <response code="200">Returns the authenticated user's information</response>
+    /// <response code="401">If the user is not authenticated</response>
     [HttpGet("me")]
     [Authorize]
     [ProducesResponseType(typeof(object), StatusCodes.Status200OK)]

@@ -1,6 +1,300 @@
-@PizzaStore.API_HostAddress = http://localhost:5282
+@baseUrl = http://localhost:5282
+@token = your-jwt-token-here
 
-GET {{PizzaStore.API_HostAddress}}/weatherforecast/
-Accept: application/json
+###############################################
+# 1. AUTHENTICATION ENDPOINTS
+###############################################
+
+### 1.1 Register a new user
+POST {{baseUrl}}/api/auth/register
+Content-Type: application/json
+
+{
+  "firstName": "John",
+  "lastName": "Doe",
+  "email": "john.doe@example.com",
+  "password": "Password123!"
+}
+
+### 1.2 Login (Returns JWT Token - Copy this to @token variable above)
+POST {{baseUrl}}/api/auth/login
+Content-Type: application/json
+
+{
+  "email": "user@pizzastore.com",
+  "password": "User123"
+}
+
+### 1.3 Login as Admin
+POST {{baseUrl}}/api/auth/login
+Content-Type: application/json
+
+{
+  "email": "admin@pizzastore.com",
+  "password": "Admin123"
+}
+
+### 1.4 Get current authenticated user information
+GET {{baseUrl}}/api/auth/me
+Authorization: Bearer {{token}}
+
+###############################################
+# 2. PIZZA ENDPOINTS (Public)
+###############################################
+
+### 2.1 Get all pizzas (Public)
+GET {{baseUrl}}/api/pizza
+
+### 2.2 Get pizza by ID (Public)
+# Replace {id} with actual pizza ID from GET all pizzas response
+GET {{baseUrl}}/api/pizza/{id}
+
+### 2.3 Get pizzas by type (Public)
+# Types: Vegetarian, MeatLovers, Hawaiian, Veggie, Custom, Supreme, Margherita
+GET {{baseUrl}}/api/pizza/type/Margherita
+
+###############################################
+# 3. PIZZA ENDPOINTS (Admin Only)
+###############################################
+
+### 3.1 Create a new pizza with variants (Admin only)
+POST {{baseUrl}}/api/pizza
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "name": "BBQ Chicken",
+  "description": "Grilled chicken with BBQ sauce, red onions, and cilantro",
+  "type": "Custom",
+  "imageUrl": "/images/pizzas/bbq-chicken.jpg",
+  "variants": [
+    {
+      "size": "Small",
+      "price": 10.99
+    },
+    {
+      "size": "Medium",
+      "price": 14.99
+    },
+    {
+      "size": "Large",
+      "price": 18.99
+    },
+    {
+      "size": "ExtraLarge",
+      "price": 22.99
+    }
+  ]
+}
+
+### 3.2 Update pizza (Admin only)
+# Replace {id} with actual pizza ID
+PUT {{baseUrl}}/api/pizza/{id}
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "name": "BBQ Chicken Supreme",
+  "description": "Updated description: Premium grilled chicken with smoky BBQ sauce",
+  "type": "Supreme",
+  "imageUrl": "/images/pizzas/bbq-chicken-supreme.jpg",
+  "isAvailable": true
+}
+
+### 3.3 Delete pizza (Soft delete - Admin only)
+# Replace {id} with actual pizza ID
+DELETE {{baseUrl}}/api/pizza/{id}
+Authorization: Bearer {{token}}
+
+### 3.4 Add variant to existing pizza (Admin only)
+# Replace {id} with actual pizza ID
+POST {{baseUrl}}/api/pizza/{id}/variants
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "size": "ExtraLarge",
+  "price": 24.99
+}
+
+### 3.5 Update pizza variant (Admin only)
+# Replace {pizzaId} and {variantId} with actual IDs
+PUT {{baseUrl}}/api/pizza/{pizzaId}/variants/{variantId}
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "size": "Large",
+  "price": 19.99,
+  "isAvailable": true
+}
+
+### 3.6 Delete pizza variant (Admin only)
+# Replace {pizzaId} and {variantId} with actual IDs
+DELETE {{baseUrl}}/api/pizza/{pizzaId}/variants/{variantId}
+Authorization: Bearer {{token}}
+
+###############################################
+# 4. TOPPING ENDPOINTS
+###############################################
+
+### 4.1 Get all toppings (Public)
+GET {{baseUrl}}/api/topping
+
+### 4.2 Create a new topping (Admin only)
+POST {{baseUrl}}/api/topping
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "name": "Feta Cheese",
+  "price": 1.50
+}
+
+### 4.3 Update topping (Admin only)
+# Replace {id} with actual topping ID
+PUT {{baseUrl}}/api/topping/{id}
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "name": "Feta Cheese",
+  "price": 1.75,
+  "isAvailable": true
+}
+
+### 4.4 Delete topping (Soft delete - Admin only)
+# Replace {id} with actual topping ID
+DELETE {{baseUrl}}/api/topping/{id}
+Authorization: Bearer {{token}}
+
+###############################################
+# 5. CART ENDPOINTS (Authenticated Users)
+###############################################
+
+### 5.1 Get current user's cart
+GET {{baseUrl}}/api/cart
+Authorization: Bearer {{token}}
+
+### 5.2 Add pizza to cart
+POST {{baseUrl}}/api/cart/items
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "pizzaVariantId": "variant-id-here",
+  "quantity": 2,
+  "specialInstructions": "Extra crispy, no onions",
+  "toppingIds": [
+    "topping-id-1",
+    "topping-id-2"
+  ]
+}
+
+### 5.3 Get specific cart item
+# Replace {cartItemId} with actual cart item ID
+GET {{baseUrl}}/api/cart/items/{cartItemId}
+Authorization: Bearer {{token}}
+
+### 5.4 Update cart item quantity
+# Replace {cartItemId} with actual cart item ID
+PUT {{baseUrl}}/api/cart/items/{cartItemId}
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "cartItemId": "cart-item-id-here",
+  "quantity": 3
+}
+
+### 5.5 Increase cart item quantity by 1
+# Replace {cartItemId} with actual cart item ID
+PATCH {{baseUrl}}/api/cart/items/{cartItemId}/increase
+Authorization: Bearer {{token}}
+
+### 5.6 Decrease cart item quantity by 1
+# Replace {cartItemId} with actual cart item ID
+PATCH {{baseUrl}}/api/cart/items/{cartItemId}/decrease
+Authorization: Bearer {{token}}
+
+### 5.7 Remove item from cart
+# Replace {cartItemId} with actual cart item ID
+DELETE {{baseUrl}}/api/cart/items/{cartItemId}
+Authorization: Bearer {{token}}
+
+### 5.8 Clear entire cart
+DELETE {{baseUrl}}/api/cart
+Authorization: Bearer {{token}}
+
+###############################################
+# 6. ORDER ENDPOINTS (Authenticated Users)
+###############################################
+
+### 6.1 Checkout cart and create order
+POST {{baseUrl}}/api/order/checkout
+Authorization: Bearer {{token}}
+
+### 6.2 Get current user's orders
+GET {{baseUrl}}/api/order
+Authorization: Bearer {{token}}
+
+### 6.3 Get order by ID
+# Replace {id} with actual order ID
+GET {{baseUrl}}/api/order/{id}
+Authorization: Bearer {{token}}
+
+### 6.4 Cancel order
+# Replace {id} with actual order ID
+POST {{baseUrl}}/api/order/{id}/cancel
+Authorization: Bearer {{token}}
+
+###############################################
+# 7. ADMIN ENDPOINTS (Admin Only)
+###############################################
+
+### 7.1 Get all users (Admin only)
+GET {{baseUrl}}/api/admin/users
+Authorization: Bearer {{token}}
+
+### 7.2 Get user by ID (Admin only)
+# Replace {id} with actual user ID
+GET {{baseUrl}}/api/admin/users/{id}
+Authorization: Bearer {{token}}
+
+### 7.3 Get orders by user ID (Admin only)
+# Replace {id} with actual user ID
+GET {{baseUrl}}/api/admin/users/{id}/orders
+Authorization: Bearer {{token}}
+
+### 7.4 Get all orders with optional filters (Admin only)
+# No filters
+GET {{baseUrl}}/api/admin/orders
+Authorization: Bearer {{token}}
+
+### 7.5 Get all orders filtered by status (Admin only)
+# Status: Pending, Confirmed, Preparing, OutForDelivery, Delivered, Cancelled
+GET {{baseUrl}}/api/admin/orders?status=Pending
+Authorization: Bearer {{token}}
+
+### 7.6 Get all orders filtered by userId (Admin only)
+GET {{baseUrl}}/api/admin/orders?userId=user-id-here
+Authorization: Bearer {{token}}
+
+### 7.7 Get all orders filtered by date range (Admin only)
+GET {{baseUrl}}/api/admin/orders?fromDate=2024-01-01&toDate=2024-12-31
+Authorization: Bearer {{token}}
+
+### 7.8 Get all orders with multiple filters (Admin only)
+GET {{baseUrl}}/api/admin/orders?status=Confirmed&userId=user-id-here&fromDate=2024-01-01&toDate=2024-12-31
+Authorization: Bearer {{token}}
+
+### 7.9 Update order status (Admin only)
+# Replace {id} with actual order ID
+# Status values: 0=Pending, 1=Confirmed, 2=Preparing, 3=OutForDelivery, 4=Delivered, 5=Cancelled
+PUT {{baseUrl}}/api/admin/orders/{id}/status
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+1
 
 ###

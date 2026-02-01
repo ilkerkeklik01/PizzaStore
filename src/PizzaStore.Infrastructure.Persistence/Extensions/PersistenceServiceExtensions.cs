@@ -33,6 +33,11 @@ public static class PersistenceServiceExtensions
         // Unit of Work and Repositories
         services.AddScoped<IUnitOfWork, UnitOfWork>();
         services.AddScoped<IUserRepository, UserRepository>();
+        services.AddScoped<IPizzaRepository, PizzaRepository>();
+        services.AddScoped<IPizzaVariantRepository, PizzaVariantRepository>();
+        services.AddScoped<IToppingRepository, ToppingRepository>();
+        services.AddScoped<ICartRepository, CartRepository>();
+        services.AddScoped<IOrderRepository, OrderRepository>();
 
         return services;
     }
