@@ -14,8 +14,11 @@ public static class PersistenceServiceExtensions
     public static IServiceCollection AddPersistenceServices(this IServiceCollection services, IConfiguration configuration)
     {
         // Database
+        var connectionString = configuration["SQL_SERVER_CONNECTION_STRING"] 
+            ?? configuration.GetConnectionString("DefaultConnection");
+        
         services.AddDbContext<ApplicationDbContext>(options =>
-            options.UseInMemoryDatabase("PizzaStoreDb"));
+            options.UseSqlServer(connectionString));
 
         // Identity
         services.AddIdentity<ApplicationUser, ApplicationRole>(options =>

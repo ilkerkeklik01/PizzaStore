@@ -5,6 +5,21 @@ All notable changes to the PizzaStore project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.4.0] - 2026-02-03
+
+### 🔧 Changed
+- **Migrated to SQL Server** - Replaced EF Core In-Memory with SQL Server for production-ready persistence
+  - Added `Microsoft.EntityFrameworkCore.SqlServer` and `Microsoft.EntityFrameworkCore.Design` packages
+  - Generated initial migration (`20260202203335_InitialCreate.cs`)
+  - Added automatic migration on startup in `Program.cs`
+  - Updated `.env.example` with SQL Server configuration template
+
+### 🐛 Fixed
+- **DecreaseCartItemQuantity Handler** - Changed return type from `DecreaseCartItemQuantityResponse` to `CartItemDto` for consistency
+
+### ✨ Added
+- **Postman E2E Test Collection** - 57 comprehensive end-to-end tests (`postman/PizzaStore-E2E-Tests.postman_collection.json`)
+
 ## [3.3.0] - 2026-02-01
 
 ### 🏗️ Major Architecture Refactoring - Context-First Organization

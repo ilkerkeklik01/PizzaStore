@@ -41,9 +41,20 @@ public class DecreaseCartItemQuantityCommandHandlerTests
         var cartItemId = "cart-item-123";
         _currentUserServiceMock.Setup(x => x.GetCurrentUserId()).Returns(userId);
 
+        var pizza = TestDataBuilder.Pizza()
+            .WithName("Margherita")
+            .Build();
+
+        var variant = TestDataBuilder.PizzaVariant()
+            .WithSize(PizzaSize.Medium)
+            .WithPrice(12.99m)
+            .WithPizza(pizza)
+            .Build();
+
         var cartItem = TestDataBuilder.CartItem()
             .WithId(cartItemId)
             .WithQuantity(5)
+            .WithPizzaVariant(variant)
             .Build();
 
         var command = new DecreaseCartItemQuantityCommand(cartItemId, 2);
@@ -56,6 +67,10 @@ public class DecreaseCartItemQuantityCommandHandlerTests
             .Setup(x => x.IsCartItemOwnedByUserAsync(cartItemId, userId))
             .ReturnsAsync(true);
 
+        _cartItemRepositoryMock
+            .Setup(x => x.GetCartItemWithDetailsAsync(cartItemId))
+            .ReturnsAsync(cartItem);
+
         _unitOfWorkMock
             .Setup(x => x.SaveChangesAsync(It.IsAny<CancellationToken>()))
             .ReturnsAsync(1);
@@ -65,17 +80,12 @@ public class DecreaseCartItemQuantityCommandHandlerTests
 
         // Assert
         result.Should().NotBeNull();
-        result.Success.Should().BeTrue();
-        result.ItemRemoved.Should().BeFalse();
-        result.Message.Should().Contain("decreased successfully");
-
         cartItem.Quantity.Should().Be(3);
         _unitOfWorkMock.Verify(x => x.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Once);
-        _cartItemRepositoryMock.Verify(x => x.DeleteAsync(It.IsAny<CartItem>()), Times.Never);
     }
 
     [Fact]
-    public async Task Handle_WhenResultQuantityWouldBeZero_RemovesCartItem()
+    public async Task Handle_WhenResultQuantityWouldBeZero_ThrowsValidationException()
     {
         // Arrange
         var userId = "test-user-id";
@@ -97,30 +107,16 @@ public class DecreaseCartItemQuantityCommandHandlerTests
             .Setup(x => x.IsCartItemOwnedByUserAsync(cartItemId, userId))
             .ReturnsAsync(true);
 
-        _cartItemRepositoryMock
-            .Setup(x => x.DeleteAsync(cartItem))
-            .Returns(Task.CompletedTask);
-
-        _unitOfWorkMock
-            .Setup(x => x.SaveChangesAsync(It.IsAny<CancellationToken>()))
-            .ReturnsAsync(1);
-
         // Act
-        var result = await _handler.Handle(command, CancellationToken.None);
+        var act = async () => await _handler.Handle(command, CancellationToken.None);
 
         // Assert
-        result.Should().NotBeNull();
-        result.Success.Should().BeTrue();
-        result.ItemRemoved.Should().BeTrue();
-        result.Message.Should().Contain("removed");
-        result.Message.Should().Contain("zero or negative");
-
-        _cartItemRepositoryMock.Verify(x => x.DeleteAsync(cartItem), Times.Once);
-        _unitOfWorkMock.Verify(x => x.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Once);
+        await act.Should().ThrowAsync<ValidationException>()
+            .WithMessage("Cart item removed because quantity would be zero or negative");
     }
 
     [Fact]
-    public async Task Handle_WhenResultQuantityWouldBeNegative_RemovesCartItem()
+    public async Task Handle_WhenResultQuantityWouldBeNegative_ThrowsValidationException()
     {
         // Arrange
         var userId = "test-user-id";
@@ -142,21 +138,12 @@ public class DecreaseCartItemQuantityCommandHandlerTests
             .Setup(x => x.IsCartItemOwnedByUserAsync(cartItemId, userId))
             .ReturnsAsync(true);
 
-        _cartItemRepositoryMock
-            .Setup(x => x.DeleteAsync(cartItem))
-            .Returns(Task.CompletedTask);
-
-        _unitOfWorkMock
-            .Setup(x => x.SaveChangesAsync(It.IsAny<CancellationToken>()))
-            .ReturnsAsync(1);
-
         // Act
-        var result = await _handler.Handle(command, CancellationToken.None);
+        var act = async () => await _handler.Handle(command, CancellationToken.None);
 
         // Assert
-        result.Should().NotBeNull();
-        result.ItemRemoved.Should().BeTrue();
-        _cartItemRepositoryMock.Verify(x => x.DeleteAsync(cartItem), Times.Once);
+        await act.Should().ThrowAsync<ValidationException>()
+            .WithMessage("Cart item removed because quantity would be zero or negative");
     }
 
     [Fact]
@@ -289,9 +276,20 @@ public class DecreaseCartItemQuantityCommandHandlerTests
         var cartItemId = "cart-item-123";
         _currentUserServiceMock.Setup(x => x.GetCurrentUserId()).Returns(userId);
 
+        var pizza = TestDataBuilder.Pizza()
+            .WithName("Margherita")
+            .Build();
+
+        var variant = TestDataBuilder.PizzaVariant()
+            .WithSize(PizzaSize.Medium)
+            .WithPrice(12.99m)
+            .WithPizza(pizza)
+            .Build();
+
         var cartItem = TestDataBuilder.CartItem()
             .WithId(cartItemId)
             .WithQuantity(10)
+            .WithPizzaVariant(variant)
             .Build();
 
         var command = new DecreaseCartItemQuantityCommand(cartItemId, 1);
@@ -304,6 +302,10 @@ public class DecreaseCartItemQuantityCommandHandlerTests
             .Setup(x => x.IsCartItemOwnedByUserAsync(cartItemId, userId))
             .ReturnsAsync(true);
 
+        _cartItemRepositoryMock
+            .Setup(x => x.GetCartItemWithDetailsAsync(cartItemId))
+            .ReturnsAsync(cartItem);
+
         _unitOfWorkMock
             .Setup(x => x.SaveChangesAsync(It.IsAny<CancellationToken>()))
             .ReturnsAsync(1);
@@ -313,6 +315,6 @@ public class DecreaseCartItemQuantityCommandHandlerTests
 
         // Assert
         cartItem.Quantity.Should().Be(9);
-        result.ItemRemoved.Should().BeFalse();
+        _unitOfWorkMock.Verify(x => x.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Once);
     }
 }

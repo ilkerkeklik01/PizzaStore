@@ -2,6 +2,7 @@ using DotNetEnv;
 using FluentValidation;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.OpenApi.Models;
 using PizzaStore.API.Filters;
 using PizzaStore.Application.Extensions;
@@ -135,10 +136,10 @@ builder.Services.AddCors(options =>
 
 var app = builder.Build();
 
-// Seed database with initial data (skip in Test environment - handled by test factory)
+// Run migrations and seed database with initial data (skip in Test environment - handled by test factory)
 if (!app.Environment.IsEnvironment("Test"))
 {
-    await SeedDatabase(app);
+    await MigrateAndSeedDatabase(app);
 }
 
 // Configure the HTTP request pipeline
@@ -166,18 +167,32 @@ app.MapControllers();
 
 app.Run();
 
-// Seed initial data
-static async Task SeedDatabase(WebApplication app)
+// Run migrations and seed initial data
+static async Task MigrateAndSeedDatabase(WebApplication app)
 {
     using var scope = app.Services.CreateScope();
     var services = scope.ServiceProvider;
-
-    var context = services.GetRequiredService<ApplicationDbContext>();
-    var userManager = services.GetRequiredService<UserManager<ApplicationUser>>();
-    var roleManager = services.GetRequiredService<RoleManager<ApplicationRole>>();
     var logger = services.GetRequiredService<ILogger<Program>>();
 
-    await DbInitializer.SeedAsync(context, userManager, roleManager, logger);
+    try
+    {
+        var context = services.GetRequiredService<ApplicationDbContext>();
+        
+        // Ensure database exists and apply migrations automatically
+        logger.LogInformation("Checking database and applying migrations...");
+        await context.Database.MigrateAsync();
+        logger.LogInformation("Database is ready.");
+
+        var userManager = services.GetRequiredService<UserManager<ApplicationUser>>();
+        var roleManager = services.GetRequiredService<RoleManager<ApplicationRole>>();
+
+        await DbInitializer.SeedAsync(context, userManager, roleManager, logger);
+    }
+    catch (Exception ex)
+    {
+        logger.LogError(ex, "An error occurred while migrating or seeding the database.");
+        throw;
+    }
 }
 
 // Make Program accessible for integration tests

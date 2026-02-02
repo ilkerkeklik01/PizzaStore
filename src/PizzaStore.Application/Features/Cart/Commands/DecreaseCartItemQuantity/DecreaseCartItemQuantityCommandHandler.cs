@@ -1,12 +1,13 @@
 using MediatR;
 using PizzaStore.Application.Extensions;
+using PizzaStore.Application.Features.Cart.Commands.AddPizzaToCart;
 using PizzaStore.Application.Services;
 using PizzaStore.Core.CrossCuttingConcerns.Exceptions;
 using PizzaStore.Domain.Interfaces;
 
 namespace PizzaStore.Application.Features.Cart.Commands.DecreaseCartItemQuantity;
 
-public class DecreaseCartItemQuantityCommandHandler : IRequestHandler<DecreaseCartItemQuantityCommand, DecreaseCartItemQuantityResponse>
+public class DecreaseCartItemQuantityCommandHandler : IRequestHandler<DecreaseCartItemQuantityCommand, CartItemDto>
 {
     private readonly IUnitOfWork _unitOfWork;
     private readonly ICurrentUserService _currentUserService;
@@ -17,7 +18,7 @@ public class DecreaseCartItemQuantityCommandHandler : IRequestHandler<DecreaseCa
         _currentUserService = currentUserService;
     }
 
-    public async Task<DecreaseCartItemQuantityResponse> Handle(DecreaseCartItemQuantityCommand request, CancellationToken cancellationToken)
+    public async Task<CartItemDto> Handle(DecreaseCartItemQuantityCommand request, CancellationToken cancellationToken)
     {
         // Check authentication
         var userId = _currentUserService.GetAuthenticatedUserId();
@@ -43,13 +44,7 @@ public class DecreaseCartItemQuantityCommandHandler : IRequestHandler<DecreaseCa
         {
             await _unitOfWork.CartItems.DeleteAsync(cartItem);
             await _unitOfWork.SaveChangesAsync(cancellationToken);
-
-            return new DecreaseCartItemQuantityResponse
-            {
-                Message = "Cart item removed because quantity would be zero or negative",
-                Success = true,
-                ItemRemoved = true
-            };
+            throw new PizzaStore.Core.CrossCuttingConcerns.Exceptions.ValidationException("Cart item removed because quantity would be zero or negative");
         }
 
         // Otherwise, update the quantity
@@ -57,11 +52,11 @@ public class DecreaseCartItemQuantityCommandHandler : IRequestHandler<DecreaseCa
         // Save changes - EF Core tracks changes automatically
         await _unitOfWork.SaveChangesAsync(cancellationToken);
 
-        return new DecreaseCartItemQuantityResponse
-        {
-            Message = "Cart item quantity decreased successfully",
-            Success = true,
-            ItemRemoved = false
-        };
+        // Reload cart item with details
+        var updatedCartItem = await _unitOfWork.CartItems.GetCartItemWithDetailsAsync(cartItem.Id);
+        if (updatedCartItem == null)
+            throw new NotFoundException($"Cart item with ID '{cartItem.Id}' not found after update");
+
+        return CartItemDto.FromEntity(updatedCartItem);
     }
 }
