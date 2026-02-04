@@ -9,6 +9,7 @@ using PizzaStore.Application.Features.Cart.Commands.RemoveCartItem;
 using PizzaStore.Application.Features.Cart.Commands.ClearCart;
 using PizzaStore.Application.Features.Cart.Queries.GetUserCart;
 using PizzaStore.Application.Features.Cart.Queries.GetCartItem;
+using PizzaStore.Core.CrossCuttingConcerns.Exceptions;
 
 namespace PizzaStore.API.Controllers;
 
@@ -103,6 +104,12 @@ public class CartController : ControllerBase
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
     public async Task<IActionResult> UpdateCartItemQuantity(string cartItemId, [FromBody] UpdateCartItemQuantityDto dto)
     {
+        if (!string.IsNullOrWhiteSpace(dto.CartItemId) && !string.Equals(dto.CartItemId, cartItemId, StringComparison.Ordinal))
+        {
+            throw new ValidationException("Cart item ID in body must match route.");
+        }
+
+        dto.CartItemId = cartItemId;
         var command = new UpdateCartItemQuantityCommand(dto);
         var result = await _mediator.Send(command);
         return Ok(result);

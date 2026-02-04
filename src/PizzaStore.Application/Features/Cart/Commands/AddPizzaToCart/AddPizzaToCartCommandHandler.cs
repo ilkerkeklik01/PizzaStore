@@ -64,14 +64,17 @@ public class AddPizzaToCartCommandHandler : IRequestHandler<AddPizzaToCartComman
             }
         }
 
-        // Get or create cart for user
-        var cart = await _unitOfWork.Carts.GetOrCreateCartForUserAsync(userId);
+        // Get cart with items for accurate count
+        var cartWithItems = await _unitOfWork.Carts.GetCartWithItemsByUserIdAsync(userId);
 
         // Issue #9: Validate max cart size (20 items limit)
-        if (cart.CartItems.Count >= 20)
+        if ((cartWithItems?.CartItems.Count ?? 0) >= 20)
         {
             throw new PizzaStore.Core.CrossCuttingConcerns.Exceptions.ValidationException("Cart cannot contain more than 20 items. Please remove some items before adding more.");
         }
+
+        // Get or create cart for user (tracked entity for writes)
+        var cart = await _unitOfWork.Carts.GetOrCreateCartForUserAsync(userId);
 
         // Create new cart item (no auto-merge)
         var cartItem = new Domain.Entities.CartItem

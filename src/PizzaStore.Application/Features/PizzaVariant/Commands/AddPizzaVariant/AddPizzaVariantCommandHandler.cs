@@ -1,5 +1,6 @@
 using FluentValidation;
 using MediatR;
+using Microsoft.EntityFrameworkCore;
 using PizzaStore.Application.Services;
 using PizzaStore.Core.CrossCuttingConcerns.Exceptions;
 using PizzaStore.Domain.Interfaces;
@@ -42,9 +43,9 @@ public class AddPizzaVariantCommandHandler : IRequestHandler<AddPizzaVariantComm
         }
 
         // Check if variant with same (PizzaId, Size) combination already exists
-        var existingVariant = pizza.Variants?
-            .FirstOrDefault(v => v.Size == request.AddPizzaVariantDto.Size && v.IsAvailable);
-        
+        var existingVariant = await _unitOfWork.PizzaVariants
+            .GetByPizzaIdAndSizeAsync(request.AddPizzaVariantDto.PizzaId, request.AddPizzaVariantDto.Size);
+
         if (existingVariant != null)
         {
             throw new ValidationException(
@@ -63,7 +64,16 @@ public class AddPizzaVariantCommandHandler : IRequestHandler<AddPizzaVariantComm
 
         // Save to database
         await _unitOfWork.PizzaVariants.AddAsync(variant);
-        await _unitOfWork.SaveChangesAsync(cancellationToken);
+        try
+        {
+            await _unitOfWork.SaveChangesAsync(cancellationToken);
+        }
+        catch (DbUpdateException)
+        {
+            // Unique constraint on (PizzaId, Size) can still be hit in races
+            throw new ValidationException(
+                $"Pizza variant with size '{request.AddPizzaVariantDto.Size}' already exists for this pizza.");
+        }
 
         return new AddPizzaVariantResponse
         {

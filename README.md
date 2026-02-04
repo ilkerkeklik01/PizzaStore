@@ -197,13 +197,13 @@ The application seeds two default users on startup:
 
 ### Admin User
 - **Email:** `admin@pizzastore.com`
-- **Password:** `Admin123`
+- **Password:** `Admin123!`
 - **Role:** Admin
 - **Access:** All endpoints including admin-only features
 
 ### Regular User
 - **Email:** `user@pizzastore.com`
-- **Password:** `User123`
+- **Password:** `User123!`
 - **Role:** User
 - **Access:** Public and authenticated user endpoints
 
