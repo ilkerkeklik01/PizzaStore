@@ -39,7 +39,7 @@ newman run postman/PizzaStore-E2E-Tests.postman_collection.json
 Clean Architecture with CQRS via MediatR. Four main layers:
 
 - **`PizzaStore.Domain`** — Core entities (Pizza, PizzaVariant, Topping, Cart, CartItem, Order, OrderItem, ApplicationUser), enums, `BaseEntity`, and repository/unit-of-work interfaces. No external dependencies.
-- **`PizzaStore.Application`** — 32+ CQRS handlers organized by business context (`Admin`, `Auth`, `Pizza`, `Cart`, `Order`, `PizzaVariant`, `Topping`). Each context lives under `Features/{Context}/Commands` and `Features/{Context}/Queries`, where each feature folder contains: Request, Handler, DTO, and FluentValidation Validator.
+- **`PizzaStore.Application`** — 32+ CQRS handlers organized by business context (`Admin`, `Auth`, `Pizza`, `Cart`, `Order`, `PizzaVariant`, `Topping`). Each context lives under `Features/{Context}/Commands` and `Features/{Context}/Queries`, where each feature folder contains: Request, Handler, DTO, and FluentValidation Validator. `Common/Behaviors/AuthorizationBehavior.cs` is a MediatR pipeline behavior that enforces auth before any handler runs. `Common/Interfaces/ISecuredRequest.cs` defines `ISecuredRequest` (requires authentication) and `IAdminRequest : ISecuredRequest` (requires Admin role) — requests implement these interfaces to declare their auth requirements.
 - **`PizzaStore.Infrastructure.Persistence`** — EF Core 10 / SQL Server. `ApplicationDbContext` extends Identity. Repositories and Unit of Work implementations. `DbInitializer` seeds roles, users, toppings, and pizzas on startup.
 - **`PizzaStore.Core.Auth`** — JWT (HMAC-SHA256) generation, `AuthService`, `CurrentUserService`.
 - **`PizzaStore.Core.CrossCuttingConcerns`** — `GlobalExceptionHandlingMiddleware` maps custom exceptions (`ValidationException`, `NotFoundException`, `UnauthorizedException`, `ForbiddenException`) to HTTP responses.
@@ -48,16 +48,19 @@ Clean Architecture with CQRS via MediatR. Four main layers:
 ### Request flow
 
 ```
-Controller → MediatR → Handler (Command/Query) → Repository/UnitOfWork → EF Core → SQL Server
+Controller → MediatR → AuthorizationBehavior → Handler (Command/Query) → Repository/UnitOfWork → EF Core → SQL Server
 ```
+
+`AuthorizationBehavior` is transparent for requests that don't implement `ISecuredRequest`. For secured requests it throws `UnauthorizedException` (401) or `ForbiddenException` (403) before the handler is ever reached. Controllers carry no `[Authorize]` attributes — all auth is enforced in the pipeline.
 
 ### Adding a new feature
 
 Follow the existing pattern for the relevant context:
 1. Add domain entity/interface to `PizzaStore.Domain` if needed.
 2. Create `Request`, `Handler`, `DTO`, and `Validator` under `PizzaStore.Application/Features/{Context}/{Commands|Queries}/`.
-3. Add repository method if required in `PizzaStore.Infrastructure.Persistence`.
-4. Add controller endpoint in `PizzaStore.API/Controllers/`.
+3. If the request requires auth, implement `ISecuredRequest` (authenticated users) or `IAdminRequest` (Admin role) on the request class — no controller attribute needed.
+4. Add repository method if required in `PizzaStore.Infrastructure.Persistence`.
+5. Add controller endpoint in `PizzaStore.API/Controllers/`.
 
 ## Key Configuration
 
@@ -68,6 +71,6 @@ Follow the existing pattern for the relevant context:
 
 ## Testing
 
-- **Unit tests:** xUnit + Moq + FluentAssertions. 193 tests covering all handlers. AAA pattern throughout. `TestDataBuilder` and `MockCurrentUserServiceHelper` provide shared test utilities.
+- **Unit tests:** xUnit + Moq + FluentAssertions. 189 tests covering all handlers and `AuthorizationBehavior`. AAA pattern throughout. `TestDataBuilder` and `MockCurrentUserServiceHelper` provide shared test utilities. Authorization scenarios (unauthenticated, wrong role) are tested in `AuthorizationBehaviorTests` — do not duplicate them in handler tests.
 - **E2E tests:** 57 Postman tests in `postman/PizzaStore-E2E-Tests.postman_collection.json`.
 - Seeded test credentials: `admin@pizzastore.com` / `Admin123!` and `user@pizzastore.com` / `User123!`.
