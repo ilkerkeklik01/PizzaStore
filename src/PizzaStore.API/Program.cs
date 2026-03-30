@@ -31,13 +31,10 @@ builder.Services.AddControllers()
         options.JsonSerializerOptions.Converters.Add(new System.Text.Json.Serialization.JsonStringEnumConverter());
     });
 
-// Add MediatR
-builder.Services.AddMediatR(cfg => cfg.RegisterServicesFromAssembly(typeof(PizzaStore.Application.Features.Auth.Commands.Register.RegisterUserCommand).Assembly));
-
 // Add FluentValidation
 builder.Services.AddValidatorsFromAssembly(typeof(PizzaStore.Application.Features.Auth.Commands.Register.RegisterUserDtoValidator).Assembly);
 
-// Add Application services (CurrentUserService, etc.)
+// Add Application services (CurrentUserService, MediatR + pipeline behaviors, etc.)
 builder.Services.AddApplicationServices();
 
 // Add Persistence services (DbContext, Identity, Repositories)

@@ -3,7 +3,6 @@ using FluentValidation;
 using FluentValidation.Results;
 using Moq;
 using PizzaStore.Application.Features.PizzaVariant.Commands.UpdatePizzaVariant;
-using PizzaStore.Application.Services;
 using PizzaStore.Application.Tests.Helpers;
 using PizzaStore.Core.CrossCuttingConcerns.Exceptions;
 using PizzaStore.Domain.Entities;
@@ -17,7 +16,6 @@ public class UpdatePizzaVariantCommandHandlerTests
     private readonly Mock<IUnitOfWork> _unitOfWorkMock;
     private readonly Mock<IPizzaVariantRepository> _pizzaVariantRepositoryMock;
     private readonly Mock<IValidator<UpdatePizzaVariantDto>> _validatorMock;
-    private readonly Mock<ICurrentUserService> _currentUserServiceMock;
     private readonly UpdatePizzaVariantCommandHandler _handler;
 
     public UpdatePizzaVariantCommandHandlerTests()
@@ -25,22 +23,19 @@ public class UpdatePizzaVariantCommandHandlerTests
         _unitOfWorkMock = new Mock<IUnitOfWork>();
         _pizzaVariantRepositoryMock = new Mock<IPizzaVariantRepository>();
         _validatorMock = new Mock<IValidator<UpdatePizzaVariantDto>>();
-        _currentUserServiceMock = new Mock<ICurrentUserService>();
-        
+
         _unitOfWorkMock.Setup(x => x.PizzaVariants).Returns(_pizzaVariantRepositoryMock.Object);
-        
+
         _handler = new UpdatePizzaVariantCommandHandler(
             _unitOfWorkMock.Object,
-            _validatorMock.Object,
-            _currentUserServiceMock.Object);
+            _validatorMock.Object);
     }
 
     [Fact]
-    public async Task Handle_WhenUserIsAdmin_AndVariantExists_AndValidationPasses_UpdatesAndReturnsVariant()
+    public async Task Handle_WhenVariantExists_AndValidationPasses_UpdatesAndReturnsVariant()
     {
         // Arrange
         var variantId = "variant-123";
-        _currentUserServiceMock.Setup(x => x.IsInRole("Admin")).Returns(true);
 
         var existingVariant = TestDataBuilder.PizzaVariant()
             .WithId(variantId)
@@ -81,36 +76,10 @@ public class UpdatePizzaVariantCommandHandlerTests
     }
 
     [Fact]
-    public async Task Handle_WhenUserIsNotAdmin_ThrowsUnauthorizedException()
-    {
-        // Arrange
-        var variantId = "variant-123";
-        _currentUserServiceMock.Setup(x => x.IsInRole("Admin")).Returns(false);
-
-        var dto = new UpdatePizzaVariantDto { Price = 14.99m };
-        var command = new UpdatePizzaVariantCommand(variantId, dto);
-
-        // Act
-        var act = async () => await _handler.Handle(command, CancellationToken.None);
-
-        // Assert
-        await act.Should().ThrowAsync<UnauthorizedException>()
-            .WithMessage("Only administrators can update pizza variants");
-
-        _validatorMock.Verify(
-            x => x.ValidateAsync(It.IsAny<UpdatePizzaVariantDto>(), It.IsAny<CancellationToken>()), 
-            Times.Never);
-        _pizzaVariantRepositoryMock.Verify(
-            x => x.GetByIdAsync(It.IsAny<string>()), 
-            Times.Never);
-    }
-
-    [Fact]
     public async Task Handle_WhenVariantDoesNotExist_ThrowsNotFoundException()
     {
         // Arrange
         var variantId = "non-existent-variant";
-        _currentUserServiceMock.Setup(x => x.IsInRole("Admin")).Returns(true);
 
         var dto = new UpdatePizzaVariantDto { Price = 14.99m };
         var command = new UpdatePizzaVariantCommand(variantId, dto);
@@ -131,7 +100,7 @@ public class UpdatePizzaVariantCommandHandlerTests
             .WithMessage($"Pizza variant with ID '{variantId}' not found.");
 
         _unitOfWorkMock.Verify(
-            x => x.SaveChangesAsync(It.IsAny<CancellationToken>()), 
+            x => x.SaveChangesAsync(It.IsAny<CancellationToken>()),
             Times.Never);
     }
 
@@ -140,7 +109,6 @@ public class UpdatePizzaVariantCommandHandlerTests
     {
         // Arrange
         var variantId = "variant-123";
-        _currentUserServiceMock.Setup(x => x.IsInRole("Admin")).Returns(true);
 
         var dto = new UpdatePizzaVariantDto { Price = -1.00m };
         var command = new UpdatePizzaVariantCommand(variantId, dto);
@@ -163,10 +131,10 @@ public class UpdatePizzaVariantCommandHandlerTests
             .WithMessage("Price must be greater than 0");
 
         _pizzaVariantRepositoryMock.Verify(
-            x => x.GetByIdAsync(It.IsAny<string>()), 
+            x => x.GetByIdAsync(It.IsAny<string>()),
             Times.Never);
         _unitOfWorkMock.Verify(
-            x => x.SaveChangesAsync(It.IsAny<CancellationToken>()), 
+            x => x.SaveChangesAsync(It.IsAny<CancellationToken>()),
             Times.Never);
     }
 
@@ -175,7 +143,6 @@ public class UpdatePizzaVariantCommandHandlerTests
     {
         // Arrange
         var variantId = "variant-123";
-        _currentUserServiceMock.Setup(x => x.IsInRole("Admin")).Returns(true);
 
         var existingVariant = TestDataBuilder.PizzaVariant()
             .WithId(variantId)
@@ -214,7 +181,6 @@ public class UpdatePizzaVariantCommandHandlerTests
     {
         // Arrange
         var variantId = "variant-123";
-        _currentUserServiceMock.Setup(x => x.IsInRole("Admin")).Returns(true);
 
         var existingVariant = TestDataBuilder.PizzaVariant()
             .WithId(variantId)

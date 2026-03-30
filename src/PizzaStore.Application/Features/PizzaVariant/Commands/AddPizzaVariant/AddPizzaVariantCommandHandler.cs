@@ -1,7 +1,6 @@
 using FluentValidation;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
-using PizzaStore.Application.Services;
 using PizzaStore.Core.CrossCuttingConcerns.Exceptions;
 using PizzaStore.Domain.Interfaces;
 using ValidationException = PizzaStore.Core.CrossCuttingConcerns.Exceptions.ValidationException;
@@ -12,21 +11,15 @@ public class AddPizzaVariantCommandHandler : IRequestHandler<AddPizzaVariantComm
 {
     private readonly IUnitOfWork _unitOfWork;
     private readonly IValidator<AddPizzaVariantDto> _validator;
-    private readonly ICurrentUserService _currentUserService;
 
-    public AddPizzaVariantCommandHandler(IUnitOfWork unitOfWork, IValidator<AddPizzaVariantDto> validator, ICurrentUserService currentUserService)
+    public AddPizzaVariantCommandHandler(IUnitOfWork unitOfWork, IValidator<AddPizzaVariantDto> validator)
     {
         _unitOfWork = unitOfWork;
         _validator = validator;
-        _currentUserService = currentUserService;
     }
 
     public async Task<AddPizzaVariantResponse> Handle(AddPizzaVariantCommand request, CancellationToken cancellationToken)
     {
-        // Verify admin role
-        if (!_currentUserService.IsInRole("Admin"))
-            throw new UnauthorizedException("Only administrators can add pizza variants");
-
         // Validate the DTO
         var validationResult = await _validator.ValidateAsync(request.AddPizzaVariantDto, cancellationToken);
         if (!validationResult.IsValid)

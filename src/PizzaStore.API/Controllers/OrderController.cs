@@ -1,5 +1,4 @@
 using MediatR;
-using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using PizzaStore.Application.Features.Order.Commands.CheckoutCart;
 using PizzaStore.Application.Features.Order.Commands.CancelOrder;
@@ -11,7 +10,6 @@ namespace PizzaStore.API.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
-[Authorize]
 public class OrderController : ControllerBase
 {
     private readonly IMediator _mediator;

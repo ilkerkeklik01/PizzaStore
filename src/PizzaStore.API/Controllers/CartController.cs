@@ -1,5 +1,4 @@
 using MediatR;
-using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using PizzaStore.Application.Features.Cart.Commands.AddPizzaToCart;
 using PizzaStore.Application.Features.Cart.Commands.UpdateCartItemQuantity;
@@ -15,7 +14,6 @@ namespace PizzaStore.API.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
-[Authorize]
 public class CartController : ControllerBase
 {
     private readonly IMediator _mediator;

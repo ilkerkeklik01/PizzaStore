@@ -1,6 +1,5 @@
 using FluentValidation;
 using MediatR;
-using PizzaStore.Application.Services;
 using PizzaStore.Core.CrossCuttingConcerns.Exceptions;
 using PizzaStore.Domain.Interfaces;
 using ValidationException = PizzaStore.Core.CrossCuttingConcerns.Exceptions.ValidationException;
@@ -14,21 +13,15 @@ public class CreateToppingCommandHandler : IRequestHandler<CreateToppingCommand,
 {
     private readonly IUnitOfWork _unitOfWork;
     private readonly IValidator<CreateToppingDto> _validator;
-    private readonly ICurrentUserService _currentUserService;
 
-    public CreateToppingCommandHandler(IUnitOfWork unitOfWork, IValidator<CreateToppingDto> validator, ICurrentUserService currentUserService)
+    public CreateToppingCommandHandler(IUnitOfWork unitOfWork, IValidator<CreateToppingDto> validator)
     {
         _unitOfWork = unitOfWork;
         _validator = validator;
-        _currentUserService = currentUserService;
     }
 
     public async Task<CreateToppingResponse> Handle(CreateToppingCommand request, CancellationToken cancellationToken)
     {
-        // Verify admin role
-        if (!_currentUserService.IsInRole("Admin"))
-            throw new UnauthorizedException("Only administrators can create toppings");
-
         // Validate the DTO
         var validationResult = await _validator.ValidateAsync(request.CreateToppingDto, cancellationToken);
         if (!validationResult.IsValid)

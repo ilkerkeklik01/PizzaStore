@@ -3,7 +3,6 @@ using FluentValidation;
 using FluentValidation.Results;
 using Moq;
 using PizzaStore.Application.Features.Topping.Commands.UpdateTopping;
-using PizzaStore.Application.Services;
 using PizzaStore.Application.Tests.Helpers;
 using PizzaStore.Core.CrossCuttingConcerns.Exceptions;
 using PizzaStore.Domain.Interfaces;
@@ -16,7 +15,6 @@ public class UpdateToppingCommandHandlerTests
     private readonly Mock<IUnitOfWork> _unitOfWorkMock;
     private readonly Mock<IToppingRepository> _toppingRepositoryMock;
     private readonly Mock<IValidator<UpdateToppingDto>> _validatorMock;
-    private readonly Mock<ICurrentUserService> _currentUserServiceMock;
     private readonly UpdateToppingCommandHandler _handler;
 
     public UpdateToppingCommandHandlerTests()
@@ -24,22 +22,19 @@ public class UpdateToppingCommandHandlerTests
         _unitOfWorkMock = new Mock<IUnitOfWork>();
         _toppingRepositoryMock = new Mock<IToppingRepository>();
         _validatorMock = new Mock<IValidator<UpdateToppingDto>>();
-        _currentUserServiceMock = new Mock<ICurrentUserService>();
-        
+
         _unitOfWorkMock.Setup(x => x.Toppings).Returns(_toppingRepositoryMock.Object);
-        
+
         _handler = new UpdateToppingCommandHandler(
             _unitOfWorkMock.Object,
-            _validatorMock.Object,
-            _currentUserServiceMock.Object);
+            _validatorMock.Object);
     }
 
     [Fact]
-    public async Task Handle_WhenUserIsAdmin_AndToppingExists_AndValidationPasses_UpdatesAndReturnsTopping()
+    public async Task Handle_WhenToppingExists_AndValidationPasses_UpdatesAndReturnsTopping()
     {
         // Arrange
         var toppingId = "topping-123";
-        _currentUserServiceMock.Setup(x => x.IsInRole("Admin")).Returns(true);
 
         var existingTopping = TestDataBuilder.Topping()
             .WithId(toppingId)
@@ -83,36 +78,10 @@ public class UpdateToppingCommandHandlerTests
     }
 
     [Fact]
-    public async Task Handle_WhenUserIsNotAdmin_ThrowsUnauthorizedException()
-    {
-        // Arrange
-        var toppingId = "topping-123";
-        _currentUserServiceMock.Setup(x => x.IsInRole("Admin")).Returns(false);
-
-        var dto = new UpdateToppingDto { Name = "Updated Name", Price = 2.50m };
-        var command = new UpdateToppingCommand(toppingId, dto);
-
-        // Act
-        var act = async () => await _handler.Handle(command, CancellationToken.None);
-
-        // Assert
-        await act.Should().ThrowAsync<UnauthorizedException>()
-            .WithMessage("Only administrators can update toppings");
-
-        _validatorMock.Verify(
-            x => x.ValidateAsync(It.IsAny<UpdateToppingDto>(), It.IsAny<CancellationToken>()), 
-            Times.Never);
-        _toppingRepositoryMock.Verify(
-            x => x.GetByIdAsync(It.IsAny<string>()), 
-            Times.Never);
-    }
-
-    [Fact]
     public async Task Handle_WhenToppingDoesNotExist_ThrowsNotFoundException()
     {
         // Arrange
         var toppingId = "non-existent-topping";
-        _currentUserServiceMock.Setup(x => x.IsInRole("Admin")).Returns(true);
 
         var dto = new UpdateToppingDto { Name = "Updated Name", Price = 2.50m };
         var command = new UpdateToppingCommand(toppingId, dto);
@@ -133,7 +102,7 @@ public class UpdateToppingCommandHandlerTests
             .WithMessage($"Topping with ID '{toppingId}' not found.");
 
         _unitOfWorkMock.Verify(
-            x => x.SaveChangesAsync(It.IsAny<CancellationToken>()), 
+            x => x.SaveChangesAsync(It.IsAny<CancellationToken>()),
             Times.Never);
     }
 
@@ -142,7 +111,6 @@ public class UpdateToppingCommandHandlerTests
     {
         // Arrange
         var toppingId = "topping-123";
-        _currentUserServiceMock.Setup(x => x.IsInRole("Admin")).Returns(true);
 
         var dto = new UpdateToppingDto { Name = "", Price = -1.00m };
         var command = new UpdateToppingCommand(toppingId, dto);
@@ -166,10 +134,10 @@ public class UpdateToppingCommandHandlerTests
             .WithMessage("*Name is required*Price must be greater than 0*");
 
         _toppingRepositoryMock.Verify(
-            x => x.GetByIdAsync(It.IsAny<string>()), 
+            x => x.GetByIdAsync(It.IsAny<string>()),
             Times.Never);
         _unitOfWorkMock.Verify(
-            x => x.SaveChangesAsync(It.IsAny<CancellationToken>()), 
+            x => x.SaveChangesAsync(It.IsAny<CancellationToken>()),
             Times.Never);
     }
 
@@ -178,7 +146,6 @@ public class UpdateToppingCommandHandlerTests
     {
         // Arrange
         var toppingId = "topping-123";
-        _currentUserServiceMock.Setup(x => x.IsInRole("Admin")).Returns(true);
 
         var existingTopping = TestDataBuilder.Topping()
             .WithId(toppingId)

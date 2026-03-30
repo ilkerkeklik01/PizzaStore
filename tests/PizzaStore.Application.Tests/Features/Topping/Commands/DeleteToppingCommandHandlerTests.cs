@@ -1,7 +1,6 @@
 using FluentAssertions;
 using Moq;
 using PizzaStore.Application.Features.Topping.Commands.DeleteTopping;
-using PizzaStore.Application.Services;
 using PizzaStore.Application.Tests.Helpers;
 using PizzaStore.Core.CrossCuttingConcerns.Exceptions;
 using PizzaStore.Domain.Interfaces;
@@ -12,28 +11,24 @@ public class DeleteToppingCommandHandlerTests
 {
     private readonly Mock<IUnitOfWork> _unitOfWorkMock;
     private readonly Mock<IToppingRepository> _toppingRepositoryMock;
-    private readonly Mock<ICurrentUserService> _currentUserServiceMock;
     private readonly DeleteToppingCommandHandler _handler;
 
     public DeleteToppingCommandHandlerTests()
     {
         _unitOfWorkMock = new Mock<IUnitOfWork>();
         _toppingRepositoryMock = new Mock<IToppingRepository>();
-        _currentUserServiceMock = new Mock<ICurrentUserService>();
-        
+
         _unitOfWorkMock.Setup(x => x.Toppings).Returns(_toppingRepositoryMock.Object);
-        
+
         _handler = new DeleteToppingCommandHandler(
-            _unitOfWorkMock.Object,
-            _currentUserServiceMock.Object);
+            _unitOfWorkMock.Object);
     }
 
     [Fact]
-    public async Task Handle_WhenUserIsAdmin_AndToppingExists_SoftDeletesAndReturnsSuccess()
+    public async Task Handle_WhenToppingExists_SoftDeletesAndReturnsSuccess()
     {
         // Arrange
         var toppingId = "topping-123";
-        _currentUserServiceMock.Setup(x => x.IsInRole("Admin")).Returns(true);
 
         var existingTopping = TestDataBuilder.Topping()
             .WithId(toppingId)
@@ -66,35 +61,10 @@ public class DeleteToppingCommandHandlerTests
     }
 
     [Fact]
-    public async Task Handle_WhenUserIsNotAdmin_ThrowsUnauthorizedException()
-    {
-        // Arrange
-        var toppingId = "topping-123";
-        _currentUserServiceMock.Setup(x => x.IsInRole("Admin")).Returns(false);
-
-        var command = new DeleteToppingCommand(toppingId);
-
-        // Act
-        var act = async () => await _handler.Handle(command, CancellationToken.None);
-
-        // Assert
-        await act.Should().ThrowAsync<UnauthorizedException>()
-            .WithMessage("Only administrators can delete toppings");
-
-        _toppingRepositoryMock.Verify(
-            x => x.GetByIdAsync(It.IsAny<string>()), 
-            Times.Never);
-        _unitOfWorkMock.Verify(
-            x => x.SaveChangesAsync(It.IsAny<CancellationToken>()), 
-            Times.Never);
-    }
-
-    [Fact]
     public async Task Handle_WhenToppingDoesNotExist_ThrowsNotFoundException()
     {
         // Arrange
         var toppingId = "non-existent-topping";
-        _currentUserServiceMock.Setup(x => x.IsInRole("Admin")).Returns(true);
 
         var command = new DeleteToppingCommand(toppingId);
 
@@ -110,7 +80,7 @@ public class DeleteToppingCommandHandlerTests
             .WithMessage($"Topping with ID '{toppingId}' not found.");
 
         _unitOfWorkMock.Verify(
-            x => x.SaveChangesAsync(It.IsAny<CancellationToken>()), 
+            x => x.SaveChangesAsync(It.IsAny<CancellationToken>()),
             Times.Never);
     }
 
@@ -119,7 +89,6 @@ public class DeleteToppingCommandHandlerTests
     {
         // Arrange
         var toppingId = "topping-123";
-        _currentUserServiceMock.Setup(x => x.IsInRole("Admin")).Returns(true);
 
         var existingTopping = TestDataBuilder.Topping()
             .WithId(toppingId)
@@ -153,8 +122,6 @@ public class DeleteToppingCommandHandlerTests
         // Arrange
         var toppingId1 = "topping-1";
         var toppingId2 = "topping-2";
-        
-        _currentUserServiceMock.Setup(x => x.IsInRole("Admin")).Returns(true);
 
         var topping1 = TestDataBuilder.Topping()
             .WithId(toppingId1)

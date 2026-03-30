@@ -2,7 +2,6 @@ using FluentAssertions;
 using Microsoft.Extensions.Logging;
 using Moq;
 using PizzaStore.Application.Features.Pizza.Commands.DeletePizza;
-using PizzaStore.Application.Services;
 using PizzaStore.Application.Tests.Helpers;
 using PizzaStore.Core.CrossCuttingConcerns.Exceptions;
 using PizzaStore.Domain.Interfaces;
@@ -13,7 +12,6 @@ public class DeletePizzaCommandHandlerTests
 {
     private readonly Mock<IUnitOfWork> _unitOfWorkMock;
     private readonly Mock<IPizzaRepository> _pizzaRepositoryMock;
-    private readonly Mock<ICurrentUserService> _currentUserServiceMock;
     private readonly Mock<ILogger<DeletePizzaCommandHandler>> _loggerMock;
     private readonly DeletePizzaCommandHandler _handler;
 
@@ -21,23 +19,20 @@ public class DeletePizzaCommandHandlerTests
     {
         _unitOfWorkMock = new Mock<IUnitOfWork>();
         _pizzaRepositoryMock = new Mock<IPizzaRepository>();
-        _currentUserServiceMock = new Mock<ICurrentUserService>();
         _loggerMock = new Mock<ILogger<DeletePizzaCommandHandler>>();
-        
+
         _unitOfWorkMock.Setup(x => x.Pizzas).Returns(_pizzaRepositoryMock.Object);
-        
+
         _handler = new DeletePizzaCommandHandler(
             _unitOfWorkMock.Object,
-            _currentUserServiceMock.Object,
             _loggerMock.Object);
     }
 
     [Fact]
-    public async Task Handle_WhenAdminAndPizzaExists_SoftDeletesPizza()
+    public async Task Handle_WhenPizzaExists_SoftDeletesPizza()
     {
         // Arrange
         var pizzaId = "pizza-123";
-        _currentUserServiceMock.Setup(x => x.IsInRole("Admin")).Returns(true);
 
         var existingPizza = TestDataBuilder.Pizza()
             .WithId(pizzaId)
@@ -69,34 +64,10 @@ public class DeletePizzaCommandHandlerTests
     }
 
     [Fact]
-    public async Task Handle_WhenNotAdmin_ThrowsUnauthorizedException()
-    {
-        // Arrange
-        _currentUserServiceMock.Setup(x => x.IsInRole("Admin")).Returns(false);
-
-        var command = new DeletePizzaCommand("pizza-123");
-
-        // Act
-        var act = async () => await _handler.Handle(command, CancellationToken.None);
-
-        // Assert
-        await act.Should().ThrowAsync<UnauthorizedException>()
-            .WithMessage("Only administrators can delete pizzas");
-
-        _pizzaRepositoryMock.Verify(
-            x => x.GetByIdAsync(It.IsAny<string>()), 
-            Times.Never);
-        _unitOfWorkMock.Verify(
-            x => x.SaveChangesAsync(It.IsAny<CancellationToken>()), 
-            Times.Never);
-    }
-
-    [Fact]
     public async Task Handle_WhenPizzaNotFound_ThrowsNotFoundException()
     {
         // Arrange
         var pizzaId = "non-existent-pizza";
-        _currentUserServiceMock.Setup(x => x.IsInRole("Admin")).Returns(true);
 
         var command = new DeletePizzaCommand(pizzaId);
 
@@ -112,16 +83,15 @@ public class DeletePizzaCommandHandlerTests
             .WithMessage($"Pizza with ID '{pizzaId}' not found.");
 
         _unitOfWorkMock.Verify(
-            x => x.SaveChangesAsync(It.IsAny<CancellationToken>()), 
+            x => x.SaveChangesAsync(It.IsAny<CancellationToken>()),
             Times.Never);
     }
 
     [Fact]
-    public async Task Handle_WhenAdminDeletesAlreadyUnavailablePizza_StillSucceeds()
+    public async Task Handle_WhenDeletesAlreadyUnavailablePizza_StillSucceeds()
     {
         // Arrange
         var pizzaId = "pizza-123";
-        _currentUserServiceMock.Setup(x => x.IsInRole("Admin")).Returns(true);
 
         var existingPizza = TestDataBuilder.Pizza()
             .WithId(pizzaId)
@@ -150,11 +120,10 @@ public class DeletePizzaCommandHandlerTests
     }
 
     [Fact]
-    public async Task Handle_WhenAdminDeletes_DoesNotHardDeletePizza()
+    public async Task Handle_WhenDeletes_DoesNotHardDeletePizza()
     {
         // Arrange
         var pizzaId = "pizza-123";
-        _currentUserServiceMock.Setup(x => x.IsInRole("Admin")).Returns(true);
 
         var existingPizza = TestDataBuilder.Pizza()
             .WithId(pizzaId)
@@ -177,7 +146,7 @@ public class DeletePizzaCommandHandlerTests
 
         // Assert
         _pizzaRepositoryMock.Verify(
-            x => x.DeleteAsync(It.IsAny<Domain.Entities.Pizza>()), 
+            x => x.DeleteAsync(It.IsAny<Domain.Entities.Pizza>()),
             Times.Never);
         _unitOfWorkMock.Verify(x => x.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Once);
     }

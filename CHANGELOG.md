@@ -5,6 +5,43 @@ All notable changes to the PizzaStore project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.5.0] - 2026-03-30
+
+### ✨ Added
+
+#### MediatR Authorization Pipeline Behavior
+- **`ISecuredRequest` / `IAdminRequest` interfaces** (`src/PizzaStore.Application/Common/Interfaces/ISecuredRequest.cs`)
+  - `ISecuredRequest` — marker interface for any request requiring authentication
+  - `IAdminRequest : ISecuredRequest` — marker interface for requests requiring the Admin role
+- **`AuthorizationBehavior<TRequest, TResponse>`** (`src/PizzaStore.Application/Common/Behaviors/AuthorizationBehavior.cs`)
+  - MediatR pipeline behavior that enforces auth before any handler executes
+  - Non-secured requests pass through with zero overhead
+  - Throws `UnauthorizedException` (HTTP 401) when user is not authenticated
+  - Throws `ForbiddenException` (HTTP 403) when user lacks the Admin role
+  - Registered via `AddOpenBehavior` in `ApplicationServiceExtensions.cs`
+- **`AuthorizationBehaviorTests`** (`tests/.../Common/Behaviors/AuthorizationBehaviorTests.cs`)
+  - 6 unit tests covering: public bypass, authenticated pass-through, unauthenticated 401, admin pass-through, non-admin 403, unauthenticated admin 401
+
+### 🔄 Changed
+
+#### Authorization moved from controllers to the MediatR pipeline
+- **All Admin commands/queries** now implement `IAdminRequest` — enforcing role at the pipeline level
+- **All user-scoped commands/queries** (Cart, Order) now implement `ISecuredRequest`
+- **Removed `[Authorize(Roles = "Admin")]`** action attributes from `AdminController`, `PizzaController`, `ToppingController` — authorization is now enforced in the pipeline, not in the HTTP layer
+- **Removed `[Authorize]`** action attributes from `CartController` and `OrderController`
+- **Removed `ICurrentUserService` from handler constructors** for all handlers that previously used it only for authorization checks (Pizza, PizzaVariant, Topping, Admin commands/queries) — auth is now the behavior's responsibility
+
+#### Test updates
+- Removed `ICurrentUserService` constructor argument from 10 command handler test classes
+- Removed "not admin / unauthenticated" test cases from handler tests (these scenarios now belong to `AuthorizationBehaviorTests`)
+
+### ✅ Verification
+
+- ✅ **Build Status:** Clean build with 0 errors
+- ✅ **Test Status:** 189 tests passing (183 handler tests + 6 new behavior tests)
+
+---
+
 ## [3.4.0] - 2026-02-03
 
 ### 🔧 Changed

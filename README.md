@@ -121,7 +121,8 @@ PizzaStore/
 ### Technical Features
 - ✅ **ASP.NET Core Identity** - Full authentication system with PBKDF2 password hashing
 - ✅ **JWT Bearer Authentication** - Stateless authentication with JWT tokens
-- ✅ **Role-based Authorization** - User and Admin roles with endpoint protection
+- ✅ **Role-based Authorization** - User and Admin roles enforced via MediatR pipeline behavior
+- ✅ **MediatR Authorization Behavior** - `AuthorizationBehavior` intercepts every request before handler execution; `ISecuredRequest` / `IAdminRequest` marker interfaces declare auth requirements on the request class itself
 - ✅ **MediatR (CQRS Pattern)** - Command/Query separation with 33+ handlers
 - ✅ **Repository + Unit of Work** - Data access abstraction with transaction support
 - ✅ **Global Exception Handling** - Centralized error handling middleware
@@ -391,6 +392,8 @@ The application automatically seeds data on startup:
 - Feature structure: `Features/{Context}/{Commands|Queries}/{Action}/`
 - Each feature contains: Command/Query, Handler, DTO, Validator
 - **Business Contexts:** Admin, Auth, Pizza, Cart, Order, PizzaVariant, Topping
+- **`Common/Behaviors/`** — MediatR pipeline behaviors (`AuthorizationBehavior`)
+- **`Common/Interfaces/`** — Shared marker interfaces (`ISecuredRequest`, `IAdminRequest`)
 
 **Handlers Overview:**
 ```
@@ -477,6 +480,7 @@ Queries (Read Operations):
 ### Design Patterns & Principles
 
 - **CQRS:** Commands and Queries separated via MediatR
+- **Pipeline Behavior Pattern:** Cross-cutting concerns (authorization) handled by `IPipelineBehavior<TRequest, TResponse>` before handlers execute
 - **Context-First Architecture:** Features organized by business context for better maintainability
 - **Vertical Slice Architecture:** All components for a feature grouped together within context
 - **Repository Pattern:** Abstraction over data access
@@ -517,11 +521,11 @@ Queries (Read Operations):
 
 ### Comprehensive Test Coverage ✅
 
-The solution includes **193 passing unit tests** and **57 E2E tests** providing complete test coverage from business logic to API endpoints.
+The solution includes **189 passing unit tests** and **57 E2E tests** providing complete test coverage from business logic to API endpoints.
 
 #### Test Projects (6)
 - `PizzaStore.API.Tests` - API layer tests (ready for implementation)
-- `PizzaStore.Application.Tests` - **193 passing tests** for all 32 handlers
+- `PizzaStore.Application.Tests` - **189 passing tests** for all 32 handlers + `AuthorizationBehavior`
 - `PizzaStore.Domain.Tests` - Domain entity tests (ready for implementation)
 - `PizzaStore.Core.Auth.Tests` - Authentication service tests (ready for implementation)
 - `PizzaStore.Core.CrossCuttingConcerns.Tests` - Middleware tests (ready for implementation)
@@ -581,8 +585,8 @@ newman run PizzaStore-E2E-Tests.postman_collection.json
 
 #### Test Quality Metrics
 
-- **Total Tests:** 193 passing (0 failures)
-- **Test Files:** 32 (one per handler)
+- **Total Tests:** 189 passing (0 failures)
+- **Test Files:** 33 (one per handler + `AuthorizationBehaviorTests`)
 - **Execution Time:** ~130ms (extremely fast)
 - **Test Infrastructure:**
   - **xUnit** - Modern testing framework
@@ -596,7 +600,7 @@ newman run PizzaStore-E2E-Tests.postman_collection.json
 All tests follow **AAA (Arrange-Act-Assert)** pattern with:
 - ✅ Success scenarios (happy paths)
 - ✅ Validation failures (DTO validation)
-- ✅ Authorization (unauthenticated, wrong role, ownership)
+- ✅ Authorization behavior (unauthenticated 401, wrong role 403, admin pass-through)
 - ✅ Not found scenarios
 - ✅ Business rules (cart limits, minimum orders, availability)
 - ✅ Edge cases and boundary conditions

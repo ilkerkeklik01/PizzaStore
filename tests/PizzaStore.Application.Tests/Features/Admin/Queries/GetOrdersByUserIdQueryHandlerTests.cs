@@ -135,7 +135,7 @@ public class GetOrdersByUserIdQueryHandlerTests
 
         _orderRepositoryMock
             .Setup(x => x.GetOrdersByUserIdAsync(userId))
-            .ReturnsAsync((List<DomainOrder>?)null);
+            .ReturnsAsync((List<DomainOrder>?)null!);
 
         var query = new GetOrdersByUserIdQuery(userId);
 

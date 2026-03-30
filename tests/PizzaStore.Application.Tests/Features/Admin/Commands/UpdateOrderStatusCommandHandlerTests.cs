@@ -2,7 +2,6 @@ using FluentAssertions;
 using Microsoft.Extensions.Logging;
 using Moq;
 using PizzaStore.Application.Features.Admin.Commands.UpdateOrderStatus;
-using PizzaStore.Application.Services;
 using PizzaStore.Application.Tests.Helpers;
 using PizzaStore.Core.CrossCuttingConcerns.Exceptions;
 using PizzaStore.Domain.Entities;
@@ -14,7 +13,6 @@ public class UpdateOrderStatusCommandHandlerTests
 {
     private readonly Mock<IUnitOfWork> _unitOfWorkMock;
     private readonly Mock<IOrderRepository> _orderRepositoryMock;
-    private readonly Mock<ICurrentUserService> _currentUserServiceMock;
     private readonly Mock<ILogger<UpdateOrderStatusCommandHandler>> _loggerMock;
     private readonly UpdateOrderStatusCommandHandler _handler;
 
@@ -22,14 +20,12 @@ public class UpdateOrderStatusCommandHandlerTests
     {
         _unitOfWorkMock = new Mock<IUnitOfWork>();
         _orderRepositoryMock = new Mock<IOrderRepository>();
-        _currentUserServiceMock = MockCurrentUserServiceHelper.CreateAdminUser();
         _loggerMock = new Mock<ILogger<UpdateOrderStatusCommandHandler>>();
 
         _unitOfWorkMock.Setup(x => x.Orders).Returns(_orderRepositoryMock.Object);
 
         _handler = new UpdateOrderStatusCommandHandler(
             _unitOfWorkMock.Object,
-            _currentUserServiceMock.Object,
             _loggerMock.Object);
     }
 
@@ -64,7 +60,7 @@ public class UpdateOrderStatusCommandHandlerTests
         // Assert
         result.Should().NotBeNull();
         result.Status.Should().Be(OrderStatus.Confirmed);
-        
+
         order.Status.Should().Be(OrderStatus.Confirmed);
         order.ConfirmedAt.Should().NotBeNull();
         order.ConfirmedAt.Should().BeCloseTo(DateTime.UtcNow, TimeSpan.FromSeconds(5));
@@ -107,7 +103,7 @@ public class UpdateOrderStatusCommandHandlerTests
         // Assert
         result.Should().NotBeNull();
         result.Status.Should().Be(OrderStatus.Delivered);
-        
+
         order.Status.Should().Be(OrderStatus.Delivered);
         order.ConfirmedAt.Should().Be(confirmedAt);
         order.CompletedAt.Should().NotBeNull();
@@ -148,7 +144,7 @@ public class UpdateOrderStatusCommandHandlerTests
         // Assert
         result.Should().NotBeNull();
         result.Status.Should().Be(OrderStatus.Cancelled);
-        
+
         order.Status.Should().Be(OrderStatus.Cancelled);
         order.CancelledAt.Should().NotBeNull();
         order.CancelledAt.Should().BeCloseTo(DateTime.UtcNow, TimeSpan.FromSeconds(5));
@@ -156,27 +152,6 @@ public class UpdateOrderStatusCommandHandlerTests
         order.CompletedAt.Should().BeNull();
 
         _unitOfWorkMock.Verify(x => x.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Once);
-    }
-
-    [Fact]
-    public async Task Handle_WhenNonAdminUser_ThrowsUnauthorizedException()
-    {
-        // Arrange
-        var nonAdminUserService = MockCurrentUserServiceHelper.CreateAuthenticatedUser(isAdmin: false);
-        var handler = new UpdateOrderStatusCommandHandler(
-            _unitOfWorkMock.Object,
-            nonAdminUserService.Object,
-            _loggerMock.Object);
-
-        var orderId = "order-123";
-        var command = new UpdateOrderStatusCommand(orderId, OrderStatus.Confirmed);
-
-        // Act
-        var act = async () => await handler.Handle(command, CancellationToken.None);
-
-        // Assert
-        await act.Should().ThrowAsync<UnauthorizedException>()
-            .WithMessage("Only administrators can update order status");
     }
 
     [Fact]
@@ -280,7 +255,7 @@ public class UpdateOrderStatusCommandHandlerTests
         // Assert
         result.Should().NotBeNull();
         result.Status.Should().Be(OrderStatus.Confirmed);
-        
+
         order.Status.Should().Be(OrderStatus.Confirmed);
         order.ConfirmedAt.Should().BeCloseTo(DateTime.UtcNow, TimeSpan.FromSeconds(5));
 
@@ -319,7 +294,7 @@ public class UpdateOrderStatusCommandHandlerTests
         // Assert
         result.Should().NotBeNull();
         result.Status.Should().Be(OrderStatus.Delivered);
-        
+
         order.Status.Should().Be(OrderStatus.Delivered);
         order.CompletedAt.Should().BeCloseTo(DateTime.UtcNow, TimeSpan.FromSeconds(5));
 
@@ -358,7 +333,7 @@ public class UpdateOrderStatusCommandHandlerTests
         // Assert
         result.Should().NotBeNull();
         result.Status.Should().Be(OrderStatus.Cancelled);
-        
+
         order.Status.Should().Be(OrderStatus.Cancelled);
         order.CancelledAt.Should().BeCloseTo(DateTime.UtcNow, TimeSpan.FromSeconds(5));
 

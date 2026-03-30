@@ -1,7 +1,6 @@
 using MediatR;
 using Microsoft.Extensions.Logging;
 using PizzaStore.Application.Features.Order.Queries;
-using PizzaStore.Application.Services;
 using PizzaStore.Core.CrossCuttingConcerns.Exceptions;
 using PizzaStore.Domain.Entities;
 using PizzaStore.Domain.Interfaces;
@@ -14,23 +13,17 @@ namespace PizzaStore.Application.Features.Admin.Commands.UpdateOrderStatus;
 public class UpdateOrderStatusCommandHandler : IRequestHandler<UpdateOrderStatusCommand, OrderDto>
 {
     private readonly IUnitOfWork _unitOfWork;
-    private readonly ICurrentUserService _currentUserService;
     private readonly ILogger<UpdateOrderStatusCommandHandler> _logger;
 
-    public UpdateOrderStatusCommandHandler(IUnitOfWork unitOfWork, ICurrentUserService currentUserService, ILogger<UpdateOrderStatusCommandHandler> logger)
+    public UpdateOrderStatusCommandHandler(IUnitOfWork unitOfWork, ILogger<UpdateOrderStatusCommandHandler> logger)
     {
         _unitOfWork = unitOfWork;
-        _currentUserService = currentUserService;
         _logger = logger;
     }
 
     public async Task<OrderDto> Handle(UpdateOrderStatusCommand request, CancellationToken cancellationToken)
     {
-        // Verify admin role
-        if (!_currentUserService.IsInRole("Admin"))
-            throw new UnauthorizedException("Only administrators can update order status");
-
-        _logger.LogInformation("Admin updating order {OrderId} status from current to {NewStatus}", 
+        _logger.LogInformation("Admin updating order {OrderId} status from current to {NewStatus}",
             request.OrderId, request.NewStatus);
 
         // Get the order
@@ -64,8 +57,8 @@ public class UpdateOrderStatusCommandHandler : IRequestHandler<UpdateOrderStatus
 
         // Save changes - EF Core tracks changes automatically
         await _unitOfWork.SaveChangesAsync(cancellationToken);
-        
-        _logger.LogInformation("Order {OrderId} status updated from {PreviousStatus} to {NewStatus} for user {UserId}", 
+
+        _logger.LogInformation("Order {OrderId} status updated from {PreviousStatus} to {NewStatus} for user {UserId}",
             request.OrderId, previousStatus, request.NewStatus, order.UserId);
 
         // Reload order with details

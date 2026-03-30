@@ -524,6 +524,10 @@ public class AddPizzaToCartCommandHandlerTests
             .Setup(x => x.GetOrCreateCartForUserAsync(userId))
             .ReturnsAsync(cart);
 
+        _cartRepositoryMock
+            .Setup(x => x.GetCartWithItemsByUserIdAsync(userId))
+            .ReturnsAsync(cart);
+
         // Act
         var act = async () => await _handler.Handle(command, CancellationToken.None);
 

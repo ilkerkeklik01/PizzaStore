@@ -3,8 +3,6 @@ using FluentValidation;
 using FluentValidation.Results;
 using Moq;
 using PizzaStore.Application.Features.Topping.Commands.CreateTopping;
-using PizzaStore.Application.Services;
-using PizzaStore.Application.Tests.Helpers;
 using PizzaStore.Core.CrossCuttingConcerns.Exceptions;
 using PizzaStore.Domain.Interfaces;
 using ValidationException = PizzaStore.Core.CrossCuttingConcerns.Exceptions.ValidationException;
@@ -16,7 +14,6 @@ public class CreateToppingCommandHandlerTests
     private readonly Mock<IUnitOfWork> _unitOfWorkMock;
     private readonly Mock<IToppingRepository> _toppingRepositoryMock;
     private readonly Mock<IValidator<CreateToppingDto>> _validatorMock;
-    private readonly Mock<ICurrentUserService> _currentUserServiceMock;
     private readonly CreateToppingCommandHandler _handler;
 
     public CreateToppingCommandHandlerTests()
@@ -24,22 +21,18 @@ public class CreateToppingCommandHandlerTests
         _unitOfWorkMock = new Mock<IUnitOfWork>();
         _toppingRepositoryMock = new Mock<IToppingRepository>();
         _validatorMock = new Mock<IValidator<CreateToppingDto>>();
-        _currentUserServiceMock = new Mock<ICurrentUserService>();
-        
+
         _unitOfWorkMock.Setup(x => x.Toppings).Returns(_toppingRepositoryMock.Object);
-        
+
         _handler = new CreateToppingCommandHandler(
             _unitOfWorkMock.Object,
-            _validatorMock.Object,
-            _currentUserServiceMock.Object);
+            _validatorMock.Object);
     }
 
     [Fact]
-    public async Task Handle_WhenUserIsAdmin_AndValidationPasses_CreatesAndReturnsTopping()
+    public async Task Handle_WhenValidationPasses_CreatesAndReturnsTopping()
     {
         // Arrange
-        _currentUserServiceMock.Setup(x => x.IsInRole("Admin")).Returns(true);
-
         var dto = new CreateToppingDto { Name = "Extra Cheese", Price = 1.50m };
         var command = new CreateToppingCommand(dto);
 
@@ -68,41 +61,15 @@ public class CreateToppingCommandHandlerTests
 
         _toppingRepositoryMock.Verify(
             x => x.AddAsync(It.Is<Domain.Entities.Topping>(
-                t => t.Name == "Extra Cheese" && t.Price == 1.50m && t.IsAvailable)), 
+                t => t.Name == "Extra Cheese" && t.Price == 1.50m && t.IsAvailable)),
             Times.Once);
         _unitOfWorkMock.Verify(x => x.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Once);
-    }
-
-    [Fact]
-    public async Task Handle_WhenUserIsNotAdmin_ThrowsUnauthorizedException()
-    {
-        // Arrange
-        _currentUserServiceMock.Setup(x => x.IsInRole("Admin")).Returns(false);
-
-        var dto = new CreateToppingDto { Name = "Extra Cheese", Price = 1.50m };
-        var command = new CreateToppingCommand(dto);
-
-        // Act
-        var act = async () => await _handler.Handle(command, CancellationToken.None);
-
-        // Assert
-        await act.Should().ThrowAsync<UnauthorizedException>()
-            .WithMessage("Only administrators can create toppings");
-
-        _validatorMock.Verify(
-            x => x.ValidateAsync(It.IsAny<CreateToppingDto>(), It.IsAny<CancellationToken>()), 
-            Times.Never);
-        _toppingRepositoryMock.Verify(
-            x => x.AddAsync(It.IsAny<Domain.Entities.Topping>()), 
-            Times.Never);
     }
 
     [Fact]
     public async Task Handle_WhenValidationFails_ThrowsValidationException()
     {
         // Arrange
-        _currentUserServiceMock.Setup(x => x.IsInRole("Admin")).Returns(true);
-
         var dto = new CreateToppingDto { Name = "", Price = -1.00m };
         var command = new CreateToppingCommand(dto);
 
@@ -125,10 +92,10 @@ public class CreateToppingCommandHandlerTests
             .WithMessage("*Name is required*Price must be greater than 0*");
 
         _toppingRepositoryMock.Verify(
-            x => x.AddAsync(It.IsAny<Domain.Entities.Topping>()), 
+            x => x.AddAsync(It.IsAny<Domain.Entities.Topping>()),
             Times.Never);
         _unitOfWorkMock.Verify(
-            x => x.SaveChangesAsync(It.IsAny<CancellationToken>()), 
+            x => x.SaveChangesAsync(It.IsAny<CancellationToken>()),
             Times.Never);
     }
 
@@ -136,8 +103,6 @@ public class CreateToppingCommandHandlerTests
     public async Task Handle_WhenValidationFailsWithSingleError_ThrowsValidationExceptionWithMessage()
     {
         // Arrange
-        _currentUserServiceMock.Setup(x => x.IsInRole("Admin")).Returns(true);
-
         var dto = new CreateToppingDto { Name = "", Price = 1.50m };
         var command = new CreateToppingCommand(dto);
 

@@ -1,5 +1,4 @@
 using MediatR;
-using PizzaStore.Application.Services;
 using PizzaStore.Core.CrossCuttingConcerns.Exceptions;
 using PizzaStore.Domain.Interfaces;
 
@@ -8,23 +7,17 @@ namespace PizzaStore.Application.Features.Topping.Commands.DeleteTopping;
 public class DeleteToppingCommandHandler : IRequestHandler<DeleteToppingCommand, DeleteToppingResponse>
 {
     private readonly IUnitOfWork _unitOfWork;
-    private readonly ICurrentUserService _currentUserService;
 
-    public DeleteToppingCommandHandler(IUnitOfWork unitOfWork, ICurrentUserService currentUserService)
+    public DeleteToppingCommandHandler(IUnitOfWork unitOfWork)
     {
         _unitOfWork = unitOfWork;
-        _currentUserService = currentUserService;
     }
 
     public async Task<DeleteToppingResponse> Handle(DeleteToppingCommand request, CancellationToken cancellationToken)
     {
-        // Verify admin role
-        if (!_currentUserService.IsInRole("Admin"))
-            throw new UnauthorizedException("Only administrators can delete toppings");
-
         // Find the topping
         var topping = await _unitOfWork.Toppings.GetByIdAsync(request.Id);
-        
+
         if (topping == null)
         {
             throw new NotFoundException($"Topping with ID '{request.Id}' not found.");

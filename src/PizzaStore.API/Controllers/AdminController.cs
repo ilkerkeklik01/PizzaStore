@@ -1,5 +1,4 @@
 using MediatR;
-using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using PizzaStore.Application.Features.Admin.Commands.UpdateOrderStatus;
 using PizzaStore.Application.Features.Admin.Queries;
@@ -14,7 +13,6 @@ namespace PizzaStore.API.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
-[Authorize(Roles = "Admin")]
 public class AdminController : ControllerBase
 {
     private readonly IMediator _mediator;

@@ -1,6 +1,5 @@
 using FluentValidation;
 using MediatR;
-using PizzaStore.Application.Services;
 using PizzaStore.Core.CrossCuttingConcerns.Exceptions;
 using PizzaStore.Domain.Interfaces;
 using ValidationException = PizzaStore.Core.CrossCuttingConcerns.Exceptions.ValidationException;
@@ -11,21 +10,15 @@ public class UpdateToppingCommandHandler : IRequestHandler<UpdateToppingCommand,
 {
     private readonly IUnitOfWork _unitOfWork;
     private readonly IValidator<UpdateToppingDto> _validator;
-    private readonly ICurrentUserService _currentUserService;
 
-    public UpdateToppingCommandHandler(IUnitOfWork unitOfWork, IValidator<UpdateToppingDto> validator, ICurrentUserService currentUserService)
+    public UpdateToppingCommandHandler(IUnitOfWork unitOfWork, IValidator<UpdateToppingDto> validator)
     {
         _unitOfWork = unitOfWork;
         _validator = validator;
-        _currentUserService = currentUserService;
     }
 
     public async Task<UpdateToppingResponse> Handle(UpdateToppingCommand request, CancellationToken cancellationToken)
     {
-        // Verify admin role
-        if (!_currentUserService.IsInRole("Admin"))
-            throw new UnauthorizedException("Only administrators can update toppings");
-
         // Validate the DTO
         var validationResult = await _validator.ValidateAsync(request.UpdateToppingDto, cancellationToken);
         if (!validationResult.IsValid)
@@ -36,7 +29,7 @@ public class UpdateToppingCommandHandler : IRequestHandler<UpdateToppingCommand,
 
         // Find the topping
         var topping = await _unitOfWork.Toppings.GetByIdAsync(request.Id);
-        
+
         if (topping == null)
         {
             throw new NotFoundException($"Topping with ID '{request.Id}' not found.");

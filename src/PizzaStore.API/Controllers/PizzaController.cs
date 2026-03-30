@@ -1,5 +1,4 @@
 using MediatR;
-using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using PizzaStore.Application.Features.Pizza.Commands.CreatePizza;
 using PizzaStore.Application.Features.Pizza.Commands.UpdatePizza;
@@ -84,7 +83,6 @@ public class PizzaController : ControllerBase
     /// <response code="401">If the user is not authenticated</response>
     /// <response code="403">If the user is not an admin</response>
     [HttpPost]
-    [Authorize(Roles = "Admin")]
     [ProducesResponseType(typeof(CreatePizzaResponse), StatusCodes.Status201Created)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
@@ -108,7 +106,6 @@ public class PizzaController : ControllerBase
     /// <response code="401">If the user is not authenticated</response>
     /// <response code="403">If the user is not an admin</response>
     [HttpPut("{id}")]
-    [Authorize(Roles = "Admin")]
     [ProducesResponseType(typeof(UpdatePizzaResponse), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
@@ -131,7 +128,6 @@ public class PizzaController : ControllerBase
     /// <response code="401">If the user is not authenticated</response>
     /// <response code="403">If the user is not an admin</response>
     [HttpDelete("{id}")]
-    [Authorize(Roles = "Admin")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
@@ -155,7 +151,6 @@ public class PizzaController : ControllerBase
     /// <response code="401">If the user is not authenticated</response>
     /// <response code="403">If the user is not an admin</response>
     [HttpPost("{id}/variants")]
-    [Authorize(Roles = "Admin")]
     [ProducesResponseType(typeof(AddPizzaVariantResponse), StatusCodes.Status201Created)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
@@ -182,7 +177,6 @@ public class PizzaController : ControllerBase
     /// <response code="401">If the user is not authenticated</response>
     /// <response code="403">If the user is not an admin</response>
     [HttpPut("{pizzaId}/variants/{variantId}")]
-    [Authorize(Roles = "Admin")]
     [ProducesResponseType(typeof(UpdatePizzaVariantResponse), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
@@ -206,7 +200,6 @@ public class PizzaController : ControllerBase
     /// <response code="401">If the user is not authenticated</response>
     /// <response code="403">If the user is not an admin</response>
     [HttpDelete("{pizzaId}/variants/{variantId}")]
-    [Authorize(Roles = "Admin")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]

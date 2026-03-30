@@ -1,7 +1,6 @@
 using FluentValidation;
 using MediatR;
 using Microsoft.Extensions.Logging;
-using PizzaStore.Application.Services;
 using PizzaStore.Core.CrossCuttingConcerns.Exceptions;
 using PizzaStore.Domain.Interfaces;
 
@@ -14,23 +13,17 @@ public class CreatePizzaCommandHandler : IRequestHandler<CreatePizzaCommand, Cre
 {
     private readonly IUnitOfWork _unitOfWork;
     private readonly IValidator<CreatePizzaDto> _validator;
-    private readonly ICurrentUserService _currentUserService;
     private readonly ILogger<CreatePizzaCommandHandler> _logger;
 
-    public CreatePizzaCommandHandler(IUnitOfWork unitOfWork, IValidator<CreatePizzaDto> validator, ICurrentUserService currentUserService, ILogger<CreatePizzaCommandHandler> logger)
+    public CreatePizzaCommandHandler(IUnitOfWork unitOfWork, IValidator<CreatePizzaDto> validator, ILogger<CreatePizzaCommandHandler> logger)
     {
         _unitOfWork = unitOfWork;
         _validator = validator;
-        _currentUserService = currentUserService;
         _logger = logger;
     }
 
     public async Task<CreatePizzaResponse> Handle(CreatePizzaCommand request, CancellationToken cancellationToken)
     {
-        // Verify admin role
-        if (!_currentUserService.IsInRole("Admin"))
-            throw new UnauthorizedException("Only administrators can create pizzas");
-
         _logger.LogInformation("Admin creating new pizza: {PizzaName}", request.CreatePizzaDto.Name);
 
         // Validate the DTO
@@ -71,7 +64,7 @@ public class CreatePizzaCommandHandler : IRequestHandler<CreatePizzaCommand, Cre
         await _unitOfWork.Pizzas.AddAsync(pizza);
         await _unitOfWork.SaveChangesAsync(cancellationToken);
 
-        _logger.LogInformation("Pizza {PizzaId} '{PizzaName}' created successfully with {VariantCount} variants", 
+        _logger.LogInformation("Pizza {PizzaId} '{PizzaName}' created successfully with {VariantCount} variants",
             pizza.Id, pizza.Name, pizza.Variants.Count);
 
         return new CreatePizzaResponse

@@ -1,6 +1,5 @@
 using FluentValidation;
 using MediatR;
-using PizzaStore.Application.Services;
 using PizzaStore.Core.CrossCuttingConcerns.Exceptions;
 using PizzaStore.Domain.Interfaces;
 using ValidationException = PizzaStore.Core.CrossCuttingConcerns.Exceptions.ValidationException;
@@ -14,21 +13,15 @@ public class UpdatePizzaCommandHandler : IRequestHandler<UpdatePizzaCommand, Upd
 {
     private readonly IUnitOfWork _unitOfWork;
     private readonly IValidator<UpdatePizzaDto> _validator;
-    private readonly ICurrentUserService _currentUserService;
 
-    public UpdatePizzaCommandHandler(IUnitOfWork unitOfWork, IValidator<UpdatePizzaDto> validator, ICurrentUserService currentUserService)
+    public UpdatePizzaCommandHandler(IUnitOfWork unitOfWork, IValidator<UpdatePizzaDto> validator)
     {
         _unitOfWork = unitOfWork;
         _validator = validator;
-        _currentUserService = currentUserService;
     }
 
     public async Task<UpdatePizzaResponse> Handle(UpdatePizzaCommand request, CancellationToken cancellationToken)
     {
-        // Verify admin role
-        if (!_currentUserService.IsInRole("Admin"))
-            throw new UnauthorizedException("Only administrators can update pizzas");
-
         // Validate the DTO
         var validationResult = await _validator.ValidateAsync(request.UpdatePizzaDto, cancellationToken);
         if (!validationResult.IsValid)
@@ -39,7 +32,7 @@ public class UpdatePizzaCommandHandler : IRequestHandler<UpdatePizzaCommand, Upd
 
         // Find the pizza
         var pizza = await _unitOfWork.Pizzas.GetByIdAsync(request.Id);
-        
+
         if (pizza == null)
         {
             throw new NotFoundException($"Pizza with ID '{request.Id}' not found.");

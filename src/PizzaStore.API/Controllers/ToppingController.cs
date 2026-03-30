@@ -1,5 +1,4 @@
 using MediatR;
-using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using PizzaStore.Application.Features.Topping.Commands.CreateTopping;
 using PizzaStore.Application.Features.Topping.Commands.UpdateTopping;
@@ -66,7 +65,6 @@ public class ToppingController : ControllerBase
     /// <response code="401">If the user is not authenticated</response>
     /// <response code="403">If the user is not an admin</response>
     [HttpPost]
-    [Authorize(Roles = "Admin")]
     [ProducesResponseType(typeof(CreateToppingResponse), StatusCodes.Status201Created)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
@@ -90,7 +88,6 @@ public class ToppingController : ControllerBase
     /// <response code="401">If the user is not authenticated</response>
     /// <response code="403">If the user is not an admin</response>
     [HttpPut("{id}")]
-    [Authorize(Roles = "Admin")]
     [ProducesResponseType(typeof(UpdateToppingResponse), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
@@ -113,7 +110,6 @@ public class ToppingController : ControllerBase
     /// <response code="401">If the user is not authenticated</response>
     /// <response code="403">If the user is not an admin</response>
     [HttpDelete("{id}")]
-    [Authorize(Roles = "Admin")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]

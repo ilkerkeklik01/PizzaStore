@@ -1,5 +1,6 @@
 using MediatR;
+using PizzaStore.Application.Common.Interfaces;
 
 namespace PizzaStore.Application.Features.PizzaVariant.Commands.AddPizzaVariant;
 
-public record AddPizzaVariantCommand(AddPizzaVariantDto AddPizzaVariantDto) : IRequest<AddPizzaVariantResponse>;
+public record AddPizzaVariantCommand(AddPizzaVariantDto AddPizzaVariantDto) : IRequest<AddPizzaVariantResponse>, IAdminRequest;

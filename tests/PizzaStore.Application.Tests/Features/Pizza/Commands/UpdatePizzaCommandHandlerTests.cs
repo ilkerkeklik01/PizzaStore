@@ -3,7 +3,6 @@ using FluentValidation;
 using FluentValidation.Results;
 using Moq;
 using PizzaStore.Application.Features.Pizza.Commands.UpdatePizza;
-using PizzaStore.Application.Services;
 using PizzaStore.Application.Tests.Helpers;
 using PizzaStore.Core.CrossCuttingConcerns.Exceptions;
 using PizzaStore.Domain.Entities;
@@ -17,7 +16,6 @@ public class UpdatePizzaCommandHandlerTests
     private readonly Mock<IUnitOfWork> _unitOfWorkMock;
     private readonly Mock<IPizzaRepository> _pizzaRepositoryMock;
     private readonly Mock<IValidator<UpdatePizzaDto>> _validatorMock;
-    private readonly Mock<ICurrentUserService> _currentUserServiceMock;
     private readonly UpdatePizzaCommandHandler _handler;
 
     public UpdatePizzaCommandHandlerTests()
@@ -25,22 +23,19 @@ public class UpdatePizzaCommandHandlerTests
         _unitOfWorkMock = new Mock<IUnitOfWork>();
         _pizzaRepositoryMock = new Mock<IPizzaRepository>();
         _validatorMock = new Mock<IValidator<UpdatePizzaDto>>();
-        _currentUserServiceMock = new Mock<ICurrentUserService>();
-        
+
         _unitOfWorkMock.Setup(x => x.Pizzas).Returns(_pizzaRepositoryMock.Object);
-        
+
         _handler = new UpdatePizzaCommandHandler(
             _unitOfWorkMock.Object,
-            _validatorMock.Object,
-            _currentUserServiceMock.Object);
+            _validatorMock.Object);
     }
 
     [Fact]
-    public async Task Handle_WhenAdminAndValidDto_UpdatesPizzaProperties()
+    public async Task Handle_WhenValidDto_UpdatesPizzaProperties()
     {
         // Arrange
         var pizzaId = "pizza-123";
-        _currentUserServiceMock.Setup(x => x.IsInRole("Admin")).Returns(true);
 
         var existingPizza = TestDataBuilder.Pizza()
             .WithId(pizzaId)
@@ -93,42 +88,9 @@ public class UpdatePizzaCommandHandlerTests
     }
 
     [Fact]
-    public async Task Handle_WhenNotAdmin_ThrowsUnauthorizedException()
-    {
-        // Arrange
-        _currentUserServiceMock.Setup(x => x.IsInRole("Admin")).Returns(false);
-
-        var dto = new UpdatePizzaDto
-        {
-            Name = "Updated Name",
-            Description = "Updated Description",
-            Type = PizzaType.Vegetarian,
-            ImageUrl = "https://example.com/new.jpg",
-            IsAvailable = true
-        };
-        var command = new UpdatePizzaCommand("pizza-123", dto);
-
-        // Act
-        var act = async () => await _handler.Handle(command, CancellationToken.None);
-
-        // Assert
-        await act.Should().ThrowAsync<UnauthorizedException>()
-            .WithMessage("Only administrators can update pizzas");
-
-        _validatorMock.Verify(
-            x => x.ValidateAsync(It.IsAny<UpdatePizzaDto>(), It.IsAny<CancellationToken>()), 
-            Times.Never);
-        _pizzaRepositoryMock.Verify(
-            x => x.GetByIdAsync(It.IsAny<string>()), 
-            Times.Never);
-    }
-
-    [Fact]
     public async Task Handle_WhenValidationFails_ThrowsValidationException()
     {
         // Arrange
-        _currentUserServiceMock.Setup(x => x.IsInRole("Admin")).Returns(true);
-
         var dto = new UpdatePizzaDto
         {
             Name = "",
@@ -158,10 +120,10 @@ public class UpdatePizzaCommandHandlerTests
             .WithMessage("*Name is required*");
 
         _pizzaRepositoryMock.Verify(
-            x => x.GetByIdAsync(It.IsAny<string>()), 
+            x => x.GetByIdAsync(It.IsAny<string>()),
             Times.Never);
         _unitOfWorkMock.Verify(
-            x => x.SaveChangesAsync(It.IsAny<CancellationToken>()), 
+            x => x.SaveChangesAsync(It.IsAny<CancellationToken>()),
             Times.Never);
     }
 
@@ -170,7 +132,6 @@ public class UpdatePizzaCommandHandlerTests
     {
         // Arrange
         var pizzaId = "non-existent-pizza";
-        _currentUserServiceMock.Setup(x => x.IsInRole("Admin")).Returns(true);
 
         var dto = new UpdatePizzaDto
         {
@@ -198,16 +159,15 @@ public class UpdatePizzaCommandHandlerTests
             .WithMessage($"Pizza with ID '{pizzaId}' not found.");
 
         _unitOfWorkMock.Verify(
-            x => x.SaveChangesAsync(It.IsAny<CancellationToken>()), 
+            x => x.SaveChangesAsync(It.IsAny<CancellationToken>()),
             Times.Never);
     }
 
     [Fact]
-    public async Task Handle_WhenAdminUpdatesAvailability_ChangesIsAvailableFlag()
+    public async Task Handle_WhenUpdatingAvailability_ChangesIsAvailableFlag()
     {
         // Arrange
         var pizzaId = "pizza-123";
-        _currentUserServiceMock.Setup(x => x.IsInRole("Admin")).Returns(true);
 
         var existingPizza = TestDataBuilder.Pizza()
             .WithId(pizzaId)
@@ -246,11 +206,10 @@ public class UpdatePizzaCommandHandlerTests
     }
 
     [Fact]
-    public async Task Handle_WhenAdminUpdatesType_ChangesPizzaType()
+    public async Task Handle_WhenUpdatingType_ChangesPizzaType()
     {
         // Arrange
         var pizzaId = "pizza-123";
-        _currentUserServiceMock.Setup(x => x.IsInRole("Admin")).Returns(true);
 
         var existingPizza = TestDataBuilder.Pizza()
             .WithId(pizzaId)

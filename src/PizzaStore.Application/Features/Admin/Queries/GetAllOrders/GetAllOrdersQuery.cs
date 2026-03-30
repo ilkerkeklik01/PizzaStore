@@ -1,4 +1,5 @@
 using MediatR;
+using PizzaStore.Application.Common.Interfaces;
 using PizzaStore.Application.Features.Order.Queries;
 using PizzaStore.Domain.Entities;
 
@@ -9,4 +10,4 @@ public record GetAllOrdersQuery(
     string? UserId = null,
     DateTime? FromDate = null,
     DateTime? ToDate = null
-) : IRequest<List<OrderDto>>;
+) : IRequest<List<OrderDto>>, IAdminRequest;
