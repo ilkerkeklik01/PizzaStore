@@ -1,0 +1,33 @@
+{
+  "hooks": {
+    "PostToolUse": [
+      {
+        "matcher": "Edit|Write",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "cd /Users/ilkerkeklik/Desktop/learning-workstation/ai-learning-workstation/dotnet-projects/SemanticKernelDemo/PizzaStore/backend && dotnet build --no-restore -v q 2>&1 | tail -5"
+          }
+        ]
+      }
+    ],
+    "PreToolUse": [
+      {
+        "matcher": "Edit|Write",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "echo '$CLAUDE_TOOL_INPUT' | grep -q '\\.env[^.]' && echo 'BLOCKED: Direct .env edits are not allowed. Edit .env.example instead.' && exit 1 || exit 0"
+          }
+        ]
+      }
+    ]
+  },
+  "enabledPlugins": {
+    "claude-code-setup@claude-plugins-official": true,
+    "feature-dev@claude-plugins-official": true,
+    "frontend-design@claude-plugins-official": true,
+    "csharp-lsp@claude-plugins-official": true,
+    "playwright@claude-plugins-official": true
+  }
+}
