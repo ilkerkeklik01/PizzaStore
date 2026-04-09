@@ -1,6 +1,6 @@
 # 🍕 PizzaStore - React + Vite Frontend
 
-A production-ready React frontend for the PizzaStore pizza ordering system, built with **Vite**, **TypeScript**, **Tailwind CSS**, and a **"Napoletana"** artisan-pizzeria design system. Features JWT authentication, role-based routing, and a complete project scaffold ready for all 31 backend API endpoints.
+A production-ready React frontend for the PizzaStore pizza ordering system, built with **Vite**, **TypeScript**, **Tailwind CSS**, and a **"Napoletana"** artisan-pizzeria design system. Features JWT authentication, role-based routing, a fully functional public homepage with pizza browsing, category filtering, and a real-time shopping cart.
 
 ## 📋 Table of Contents
 - [Overview](#-overview)
@@ -28,12 +28,19 @@ PizzaStore Frontend is a React SPA that targets the [PizzaStore Backend API](../
 - ✅ **Protected Routes** — `<ProtectedRoute>` and `<ProtectedRoute requireAdmin>` wrappers
 - ✅ **Token Expiry Handling** — Client-side expiry check on route guard and store hydration
 - ✅ **401 Interceptor** — Axios response interceptor auto-clears auth and redirects to `/login`
-- ✅ **Placeholder Pages** — `HomePage` and `AdminPage` ready for feature implementation
+- ✅ **Public Homepage** — Accessible to all three roles (unauthenticated, user, admin)
+  - Cinematic hero section with animated decorative rings and scroll CTA
+  - Stats bar (categories, sizes, quality indicators)
+  - 8-category filter pills with live pizza grid filtering
+  - Pizza cards with type-specific gradient placeholders, size selector, dynamic price, "Add to Cart" / "Sign in to Order" (role-aware)
+  - Cart drawer — add, increase/decrease quantity, remove item, clear cart, proceed to checkout
+  - "Added!" 2.2s confirmation feedback on pizza cards
+- ✅ **Navbar** — Fixed top bar, scroll-aware frosted-glass blur, cart badge (real-time quantity), profile dropdown (email, Admin badge, sign out), admin-only panel link
+- ✅ **Cart Integration** — TanStack Query `['cart']` cache invalidated on every mutation; badge stays in sync across drawer and pizza cards
+- ✅ **Admin Page** — Protected placeholder (admin role required)
 
 ### Scaffold Ready
-- 🔲 Pizza Menu & Detail pages
-- 🔲 Shopping Cart
-- 🔲 Order History & Checkout
+- 🔲 Order History & Checkout flow
 - 🔲 Admin Dashboard (users, orders, pizza/topping CRUD)
 
 ## 🛠️ Technology Stack
@@ -111,20 +118,26 @@ frontend/
 ├── src/
 │   ├── api/
 │   │   ├── client.ts           # Axios instance — Bearer token injection, 401 handling
-│   │   └── auth.api.ts         # loginUser(), registerUser()
+│   │   ├── auth.api.ts         # loginUser(), registerUser()
+│   │   ├── pizza.api.ts        # getAllPizzas(), getPizzaById(), getPizzasByType()
+│   │   └── cart.api.ts         # getCart(), addToCart(), removeFromCart(), clearCart(), increase/decreaseQuantity()
 │   ├── components/
-│   │   └── ProtectedRoute.tsx  # Role-aware route guard (requireAdmin prop)
+│   │   ├── ProtectedRoute.tsx  # Role-aware route guard (requireAdmin prop)
+│   │   ├── Navbar.tsx          # Fixed top bar — cart badge, profile dropdown, scroll blur
+│   │   └── CartDrawer.tsx      # Right-side slide-in cart panel with full CRUD
 │   ├── hooks/
-│   │   └── useAuth.ts          # Single shallow-equality Zustand selector
+│   │   └── useAuth.ts          # Single shallow-equality Zustand selector (useShallow)
 │   ├── pages/
 │   │   ├── LoginPage.tsx       # Napoletana auth UI — sign in
 │   │   ├── RegisterPage.tsx    # Napoletana auth UI — create account
-│   │   ├── HomePage.tsx        # Placeholder — authenticated user home
-│   │   └── AdminPage.tsx       # Placeholder — admin dashboard
+│   │   ├── HomePage.tsx        # Public homepage — hero, category filters, pizza grid
+│   │   └── AdminPage.tsx       # Admin dashboard (protected, placeholder)
 │   ├── store/
 │   │   └── authStore.ts        # Zustand store — token, user, role, expiry validation
 │   ├── types/
-│   │   └── auth.ts             # UserInfo, AuthResponse, LoginDto, RegisterDto
+│   │   ├── auth.ts             # UserInfo, AuthResponse, LoginDto, RegisterDto
+│   │   ├── pizza.ts            # PizzaType, PizzaSize, PizzaVariant, Pizza
+│   │   └── cart.ts             # CartItemTopping, CartItem, Cart, AddToCartDto
 │   ├── lib/
 │   │   └── utils.ts            # cn() — clsx + tailwind-merge helper
 │   ├── App.tsx                 # Router — public, protected, admin-only routes
@@ -143,11 +156,11 @@ frontend/
 
 | Route | Component | Auth | Description |
 |---|---|---|---|
+| `/` | `HomePage` | Public | Pizza menu, hero, cart (full features require auth) |
 | `/login` | `LoginPage` | Public | Email + password login |
 | `/register` | `RegisterPage` | Public | New account creation |
-| `/` | `HomePage` | Authenticated | User home (placeholder) |
 | `/admin` | `AdminPage` | Admin role | Admin dashboard (placeholder) |
-| `*` | Redirect | — | Catch-all → `/login` |
+| `*` | Redirect | — | Catch-all → `/` |
 
 ### Role-Based Redirect After Login
 
@@ -157,6 +170,14 @@ POST /api/auth/login
   → role === "Admin" → navigate("/admin")
   → role === "User"  → navigate("/")
 ```
+
+### Role-Aware Homepage Behaviour
+
+| State | Hero Buttons | Pizza Cards | Navbar |
+|---|---|---|---|
+| Unauthenticated | Explore Our Menu + Create Account | "Sign in to Order" | Sign in link |
+| Regular User | Explore Our Menu | "Add to Cart" | Cart badge + profile dropdown |
+| Admin | Explore Our Menu | "Add to Cart" | Cart badge + profile dropdown + Admin link |
 
 ## 🔐 Authentication & Authorization
 
