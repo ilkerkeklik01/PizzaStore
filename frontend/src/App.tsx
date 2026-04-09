@@ -5,6 +5,9 @@ import LoginPage from '@/pages/LoginPage'
 import RegisterPage from '@/pages/RegisterPage'
 import HomePage from '@/pages/HomePage'
 import AdminPage from '@/pages/AdminPage'
+import CheckoutPage from '@/pages/CheckoutPage'
+import OrderHistoryPage from '@/pages/OrderHistoryPage'
+import OrderDetailPage from '@/pages/OrderDetailPage'
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -30,6 +33,13 @@ export default function App() {
           {/* Admin-only routes */}
           <Route element={<ProtectedRoute requireAdmin />}>
             <Route path="/admin" element={<AdminPage />} />
+          </Route>
+
+          {/* Authenticated user routes */}
+          <Route element={<ProtectedRoute />}>
+            <Route path="/checkout" element={<CheckoutPage />} />
+            <Route path="/orders" element={<OrderHistoryPage />} />
+            <Route path="/orders/:id" element={<OrderDetailPage />} />
           </Route>
 
           <Route path="*" element={<Navigate to="/" replace />} />

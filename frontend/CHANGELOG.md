@@ -5,6 +5,74 @@ All notable changes to the PizzaStore Frontend will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.3.0] - 2026-04-09
+
+### ✨ Added
+
+#### Topping Selection on Pizza Cards (`src/pages/HomePage.tsx`)
+- Each `PizzaCard` now fetches available toppings via `GET /api/topping` (TanStack Query, 5-minute stale time, shared cache across all cards via `['toppings']` key)
+- Collapsible "Add toppings" toggle button below the size selector — highlights gold when toppings are selected
+- 2-column topping grid with toggle buttons: name + `+$price`; selected state uses gold (`#D4A44C`) border and background
+- Live price update: base variant price + sum of selected topping prices displayed under the main price
+- "incl. +$X.XX toppings" sub-label shown when at least one topping is selected
+- `toppingIds: string[]` passed to `addToCart()` on "Add to Cart" — topping selections cleared on successful add
+- No impact on unauthenticated users: topping UI hidden (sign-in gate still applies)
+
+#### Checkout Page (`src/pages/CheckoutPage.tsx` — new)
+- Protected route at `/checkout` (authenticated users only)
+- Displays full cart summary: per-item pizza name, size, quantity, topping list, subtotal; grand total
+- "Place Order" button triggers `POST /api/order/checkout` (no body — uses server-side cart)
+- Loading spinner during checkout mutation; button disabled and dimmed while pending
+- Error banner on failure (400 empty cart, generic server error)
+- Success state: animated confirmation card with green `CheckCircle` icon, Italian "Grazie!" heading, order ID + total, "Track Order" → `/orders/{id}` and "Continue Shopping" → `/` buttons
+- Invalidates `['cart']` and `['orders']` query keys on success
+
+#### Order History Page (`src/pages/OrderHistoryPage.tsx` — new)
+- Protected route at `/orders` (authenticated users only)
+- Fetches all user orders via `GET /api/order`, sorted by `createdAt` descending
+- Each order row: status badge, date/time, pizza name summary (first 2 items + "+N more"), short order ID, total price, chevron arrow
+- Status badges: colour-coded dot + label for all 6 statuses (Pending gold, Confirmed blue, Preparing terracotta, OutForDelivery purple, Delivered green, Cancelled ash)
+- Rows are clickable, navigate to `/orders/{id}`; hover: lift + terracotta border glow
+- Loading spinner and empty state (with "Order Now" CTA)
+
+#### Order Detail Page (`src/pages/OrderDetailPage.tsx` — new)
+- Protected route at `/orders/:id` (authenticated users only)
+- Fetches single order via `GET /api/order/{id}`; handles 404 and error states
+- Header: short order ID, status badge, creation date, total price
+- Status progress timeline (horizontal step indicator) for non-cancelled orders: Pending → Confirmed → Preparing → Out for Delivery → Delivered; past steps green, active step terracotta with outline ring, future steps muted
+- Timestamps panel: Confirmed At, Delivered At, Cancelled At (shown only if set)
+- Items table: pizza name, size, quantity, base price per row; topping chips (gold badge per topping with name + price); special instructions in italics; subtotal per row; total footer row
+- Cancel Order button: shown only when status is `Pending` or `Confirmed`; opens confirmation modal
+- Cancel modal: backdrop blur overlay, "Yes, Cancel Order" / "Keep Order" buttons; mutation via `POST /api/order/{id}/cancel`; invalidates `['orders', id]` and `['orders']` on success; error banner on failure
+
+#### New API Modules
+- **`src/api/topping.api.ts`** — `getAllToppings()` (`GET /api/topping`), `getToppingById(id)` (`GET /api/topping/{id}`)
+- **`src/api/order.api.ts`** — `checkoutCart()` (`POST /api/order/checkout`), `getMyOrders()` (`GET /api/order`), `getOrderById(id)` (`GET /api/order/{id}`), `cancelOrder(id)` (`POST /api/order/{id}/cancel`)
+
+#### New TypeScript Types
+- **`src/types/topping.ts`** — `Topping` (`id`, `name`, `price`, `isAvailable`)
+- **`src/types/order.ts`** — `OrderStatus` union type, `OrderItemTopping`, `OrderItem`, `Order` interfaces matching backend `OrderDto` / `OrderItemDto` / `OrderItemToppingDto` (all price fields use snapshot-at-order-time naming)
+
+### 🔧 Changed
+
+- **`src/App.tsx`** — Added three new protected routes: `/checkout` (`CheckoutPage`), `/orders` (`OrderHistoryPage`), `/orders/:id` (`OrderDetailPage`); all wrapped in a single `<ProtectedRoute>` outlet block
+- **`src/components/Navbar.tsx`** — Added "Orders" nav link (authenticated users only, `ClipboardList` icon) between the admin link and cart button; links to `/orders`; hover: muted ash → parchment with subtle border
+- **`src/components/CartDrawer.tsx`** — "Proceed to Checkout" button now navigates to `/checkout` (via `useNavigate`) and closes the drawer on click; previously a non-functional stub
+- **`src/pages/HomePage.tsx`** — `PizzaCard.onAddToCart` signature updated from `(variantId: string) => void` to `(variantId: string, toppingIds: string[]) => void`; `handleAddToCart` in `HomePage` passes `toppingIds` through to `addToCart` DTO
+
+### 🔒 Security
+
+- **Upgraded Axios `1.14.0` → `1.15.0`** (exact pin maintained) — `1.15.0` is the first confirmed-clean release post supply-chain attack and fixes `GHSA-3p68-rc4w-qgx5` (NO_PROXY hostname normalisation bypass → SSRF, published 2026-04-09, Critical severity)
+- `npm audit` now reports **0 vulnerabilities**
+- `CLAUDE.md` security note updated with full attack timeline, attribution (UNC1069, North Korea-nexus, Google TIG 2026-04-01), and per-version safety status
+
+### ✅ Verification
+
+- ✅ **Build:** TypeScript compilation clean (0 errors, `tsc --noEmit`)
+- ✅ **Audit:** `npm audit` — 0 vulnerabilities with Axios 1.15.0
+
+---
+
 ## [0.2.0] - 2026-04-09
 
 ### ✨ Added
@@ -146,7 +214,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - React Router DOM 6.28.0
 - TanStack Query 5.64.0 (configured with 5-minute stale time, 1 retry)
 - Zustand 5.0.3 + persist middleware
-- Axios **1.14.0** (exact pin — see security note below; upgraded from initial `1.7.9` in v0.1.1)
+- Axios **1.15.0** (exact pin — see security note in CLAUDE.md; `1.14.0` was the initial clean pin in v0.1.1, upgraded to `1.15.0` in v0.3.0)
 - React Hook Form 7.54.2 + `@hookform/resolvers` 3.9.1
 - Zod 3.24.1
 - jwt-decode 4.0.0
