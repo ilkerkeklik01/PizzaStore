@@ -5,6 +5,66 @@ All notable changes to the PizzaStore Frontend will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.2.0] - 2026-04-09
+
+### ✨ Added
+
+#### Public Homepage (`src/pages/HomePage.tsx` — full rewrite)
+- Cinematic hero section with animated decorative rings, Bodoni Moda italic heading, tagline, and dual CTAs ("Explore Our Menu" scroll + "Create Account" → `/register` for unauthenticated users)
+- Animated "SCROLL" indicator in hero
+- Stats bar: 7 categories · 4 sizes · 100% Italian · Daily Fresh
+- 8-category filter pills (All, Margherita, Supreme, MeatLovers, Hawaiian, Vegetarian, Veggie, Custom) with active highlight
+- Responsive pizza grid — `PizzaCard` sub-component per pizza with:
+  - Type-specific CSS linear gradient placeholder (used when `imageUrl` is null or fails to load via `onError`)
+  - Size selector buttons (S / M / L / XL) — active selection highlighted
+  - Dynamic price display updating on size change
+  - "Add to Cart" button (authenticated) / "Sign in to Order" button (unauthenticated, redirects to `/login`)
+  - "Added!" 2.2s green confirmation feedback state after successful cart add
+  - Drawer opens automatically after add
+- Footer: Napoletana branding + tagline
+- Homepage is now **public** — accessible to all three roles without authentication
+
+#### Navbar (`src/components/Navbar.tsx` — new)
+- Fixed top bar with scroll-aware frosted-glass background (activates after 20px scroll)
+- Flame + "Napoletana" logo link → `/`
+- Cart icon button (authenticated only) with live item-count badge
+- Profile dropdown (authenticated only): avatar circle with initial, full name display, email, Admin role badge (admin only), gold "Admin Panel" link (admin only), "Sign out" button
+- "Sign in" link shown to unauthenticated users
+
+#### Cart Drawer (`src/components/CartDrawer.tsx` — new)
+- Right-side slide-in panel (420px, `cubic-bezier(0.34,1.56,0.64,1)` spring animation)
+- Dark overlay backdrop — click to close
+- Per-item row: name, size, quantity `−`/`+` controls, trash icon delete, subtotal price
+- Footer: item count, total price, "Proceed to Checkout" CTA, "Clear cart" link
+- Empty state: pizza emoji + message
+- All mutations (`addToCart`, `increaseQuantity`, `decreaseQuantity`, `removeFromCart`, `clearCart`) invalidate `['cart']` query key, keeping navbar badge in sync
+
+#### API Modules
+- **`src/api/pizza.api.ts`** — `getAllPizzas()`, `getPizzaById(id)`, `getPizzasByType(type)` over `GET /api/pizza`
+- **`src/api/cart.api.ts`** — `getCart()`, `addToCart(dto)`, `removeFromCart(itemId)`, `clearCart()`, `increaseQuantity(itemId)`, `decreaseQuantity(itemId)`
+
+#### TypeScript Types
+- **`src/types/pizza.ts`** — `PizzaType`, `PizzaSize`, `PizzaVariant`, `Pizza` interfaces matching backend `PizzaDto`
+- **`src/types/cart.ts`** — `CartItemTopping`, `CartItem`, `Cart`, `AddToCartDto` interfaces matching backend `CartDto`/`CartItemDto`
+
+### 🔧 Changed
+
+- **`src/App.tsx`** — `/` route is now public (removed `<ProtectedRoute>` wrapper); catch-all `*` redirects to `/` instead of `/login`
+- **`src/index.css`** — added `scaleIn` and `slideInRight` keyframe animations used by cart drawer and pizza card confirmation state
+
+### 🐛 Fixed
+
+- **`src/hooks/useAuth.ts`** — replaced Zustand v4-style `useAuthStore(selector, shallow)` two-argument call (removed in Zustand v5) with `useAuthStore(useShallow(selector))` using `useShallow` from `zustand/react/shallow`. Eliminated 7 TypeScript errors with no behaviour change.
+
+### ✅ Verification
+
+- ✅ **Build:** TypeScript compilation clean (0 errors)
+- ✅ **Playwright:** 37/37 test cases passed across all three roles (unauthenticated, regular user, admin)
+- ✅ **Cart:** real-time badge sync across navbar, drawer, and pizza cards confirmed
+- ✅ **Auth guards:** expired JWT → ProtectedRoute redirect confirmed; `/admin` blocked for non-admin role confirmed
+
+---
+
 ## [0.1.1] - 2026-04-06
 
 ### 🔒 Security

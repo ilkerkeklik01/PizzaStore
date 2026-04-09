@@ -24,17 +24,15 @@ export default function App() {
           <Route path="/login" element={<LoginPage />} />
           <Route path="/register" element={<RegisterPage />} />
 
-          {/* Authenticated user routes */}
-          <Route element={<ProtectedRoute />}>
-            <Route path="/" element={<HomePage />} />
-          </Route>
+          {/* Public home – all roles can browse; auth features shown conditionally */}
+          <Route path="/" element={<HomePage />} />
 
           {/* Admin-only routes */}
           <Route element={<ProtectedRoute requireAdmin />}>
             <Route path="/admin" element={<AdminPage />} />
           </Route>
 
-          <Route path="*" element={<Navigate to="/login" replace />} />
+          <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </BrowserRouter>
     </QueryClientProvider>
