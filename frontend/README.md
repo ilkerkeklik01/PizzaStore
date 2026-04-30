@@ -32,15 +32,17 @@ PizzaStore Frontend is a React SPA that targets the [PizzaStore Backend API](../
   - Cinematic hero section with animated decorative rings and scroll CTA
   - Stats bar (categories, sizes, quality indicators)
   - 8-category filter pills with live pizza grid filtering
-  - Pizza cards with type-specific gradient placeholders, size selector, dynamic price, "Add to Cart" / "Sign in to Order" (role-aware)
-  - Cart drawer — add, increase/decrease quantity, remove item, clear cart, proceed to checkout
-  - "Added!" 2.2s confirmation feedback on pizza cards
-- ✅ **Navbar** — Fixed top bar, scroll-aware frosted-glass blur, cart badge (real-time quantity), profile dropdown (email, Admin badge, sign out), admin-only panel link
+  - Pizza cards with size selector, topping selector, live price update, "Add to Cart" / "Sign in to Order" (role-aware), "Added!" 2.2s confirmation
+  - Cart drawer — add, increase/decrease quantity, remove item, clear cart, "Proceed to Checkout" navigates to `/checkout`
+- ✅ **Topping Selection** — Collapsible per-card topping grid; gold highlight on selection; live price update includes topping cost; `toppingIds` sent to cart API
+- ✅ **Navbar** — Fixed top bar, scroll-aware frosted-glass blur, cart badge (real-time quantity), "Orders" link, profile dropdown (email, Admin badge, sign out), admin-only panel link
 - ✅ **Cart Integration** — TanStack Query `['cart']` cache invalidated on every mutation; badge stays in sync across drawer and pizza cards
+- ✅ **Checkout Page** — Order review with item list and totals; `POST /api/order/checkout`; success confirmation with order ID and "Track Order" link
+- ✅ **Order History Page** — Full list of past orders sorted by date; colour-coded status badges; clickable rows navigate to order detail
+- ✅ **Order Detail Page** — Full order breakdown with progress timeline, item/topping snapshot, timestamps, and "Cancel Order" with confirmation modal
 - ✅ **Admin Page** — Protected placeholder (admin role required)
 
 ### Scaffold Ready
-- 🔲 Order History & Checkout flow
 - 🔲 Admin Dashboard (users, orders, pizza/topping CRUD)
 
 ## 🛠️ Technology Stack
@@ -54,14 +56,14 @@ PizzaStore Frontend is a React SPA that targets the [PizzaStore Backend API](../
 | Routing | React Router v6 | ^6.28.0 |
 | Server State | TanStack Query | ^5.64.0 |
 | Client State | Zustand + persist | ^5.0.3 |
-| HTTP Client | Axios | 1.14.0 (exact pin) |
+| HTTP Client | Axios | 1.15.0 (exact pin) |
 | Forms | React Hook Form | ^7.54.2 |
 | Validation | Zod | ^3.24.1 |
 | Token Decode | jwt-decode | ^4.0.0 |
 | UI Primitives | Radix UI | ^2.1.1 |
 | Icons | Lucide React | ^0.469.0 |
 
-> **Note on Axios version:** Axios is pinned to exactly `1.14.0` (no `^` caret). `1.14.0` is the last known-clean release — chosen over `1.7.9` which carried 3 CVEs (SSRF credential leak, 2× DoS). Version `1.14.1` (current `latest` tag) and `0.30.4` are compromised by a supply-chain attack (2026-03-31). Do not run `npm audit fix --force` or upgrade until a clean release is published. See [axios security advisory](https://github.com/axios/axios).
+> **Note on Axios version:** Axios is pinned to exactly `1.15.0` (no `^` caret). `1.15.0` is the current confirmed-clean release — it fixes `GHSA-3p68-rc4w-qgx5` (NO_PROXY SSRF, 2026-04-09) and was published by legitimate maintainers after the 2026-03-31 supply-chain attack that compromised `1.14.1` and `0.30.4`. Never run `npm audit fix --force`. See [CLAUDE.md](./CLAUDE.md#security-axios-version-lock) for full history.
 
 ## 🚀 Getting Started
 
@@ -120,24 +122,31 @@ frontend/
 │   │   ├── client.ts           # Axios instance — Bearer token injection, 401 handling
 │   │   ├── auth.api.ts         # loginUser(), registerUser()
 │   │   ├── pizza.api.ts        # getAllPizzas(), getPizzaById(), getPizzasByType()
-│   │   └── cart.api.ts         # getCart(), addToCart(), removeFromCart(), clearCart(), increase/decreaseQuantity()
+│   │   ├── cart.api.ts         # getCart(), addToCart(), removeFromCart(), clearCart(), increase/decreaseQuantity()
+│   │   ├── topping.api.ts      # getAllToppings(), getToppingById()
+│   │   └── order.api.ts        # checkoutCart(), getMyOrders(), getOrderById(), cancelOrder()
 │   ├── components/
 │   │   ├── ProtectedRoute.tsx  # Role-aware route guard (requireAdmin prop)
-│   │   ├── Navbar.tsx          # Fixed top bar — cart badge, profile dropdown, scroll blur
-│   │   └── CartDrawer.tsx      # Right-side slide-in cart panel with full CRUD
+│   │   ├── Navbar.tsx          # Fixed top bar — Orders link, cart badge, profile dropdown, scroll blur
+│   │   └── CartDrawer.tsx      # Right-side slide-in cart panel — full CRUD + checkout navigation
 │   ├── hooks/
 │   │   └── useAuth.ts          # Single shallow-equality Zustand selector (useShallow)
 │   ├── pages/
 │   │   ├── LoginPage.tsx       # Napoletana auth UI — sign in
 │   │   ├── RegisterPage.tsx    # Napoletana auth UI — create account
-│   │   ├── HomePage.tsx        # Public homepage — hero, category filters, pizza grid
+│   │   ├── HomePage.tsx        # Public homepage — hero, category filters, pizza grid + topping selector
+│   │   ├── CheckoutPage.tsx    # Order review + place order + success confirmation (protected)
+│   │   ├── OrderHistoryPage.tsx # Paginated order list with status badges (protected)
+│   │   ├── OrderDetailPage.tsx  # Full order detail, progress timeline, cancel modal (protected)
 │   │   └── AdminPage.tsx       # Admin dashboard (protected, placeholder)
 │   ├── store/
 │   │   └── authStore.ts        # Zustand store — token, user, role, expiry validation
 │   ├── types/
 │   │   ├── auth.ts             # UserInfo, AuthResponse, LoginDto, RegisterDto
 │   │   ├── pizza.ts            # PizzaType, PizzaSize, PizzaVariant, Pizza
-│   │   └── cart.ts             # CartItemTopping, CartItem, Cart, AddToCartDto
+│   │   ├── cart.ts             # CartItemTopping, CartItem, Cart, AddToCartDto
+│   │   ├── topping.ts          # Topping
+│   │   └── order.ts            # OrderStatus, OrderItemTopping, OrderItem, Order
 │   ├── lib/
 │   │   └── utils.ts            # cn() — clsx + tailwind-merge helper
 │   ├── App.tsx                 # Router — public, protected, admin-only routes
@@ -156,9 +165,12 @@ frontend/
 
 | Route | Component | Auth | Description |
 |---|---|---|---|
-| `/` | `HomePage` | Public | Pizza menu, hero, cart (full features require auth) |
+| `/` | `HomePage` | Public | Pizza menu, hero, topping selector, cart (full features require auth) |
 | `/login` | `LoginPage` | Public | Email + password login |
 | `/register` | `RegisterPage` | Public | New account creation |
+| `/checkout` | `CheckoutPage` | User | Order review, place order, success confirmation |
+| `/orders` | `OrderHistoryPage` | User | All past orders with status badges |
+| `/orders/:id` | `OrderDetailPage` | User | Order detail, progress timeline, cancel |
 | `/admin` | `AdminPage` | Admin role | Admin dashboard (placeholder) |
 | `*` | Redirect | — | Catch-all → `/` |
 
@@ -175,9 +187,9 @@ POST /api/auth/login
 
 | State | Hero Buttons | Pizza Cards | Navbar |
 |---|---|---|---|
-| Unauthenticated | Explore Our Menu + Create Account | "Sign in to Order" | Sign in link |
-| Regular User | Explore Our Menu | "Add to Cart" | Cart badge + profile dropdown |
-| Admin | Explore Our Menu | "Add to Cart" | Cart badge + profile dropdown + Admin link |
+| Unauthenticated | Explore Our Menu + Create Account | "Sign in to Order" (no topping selector) | Sign in link |
+| Regular User | Explore Our Menu | "Add to Cart" + topping selector | Orders link + cart badge + profile dropdown |
+| Admin | Explore Our Menu | "Add to Cart" + topping selector | Orders link + cart badge + profile dropdown + Admin link |
 
 ## 🔐 Authentication & Authorization
 
@@ -202,7 +214,9 @@ The `authStore` handles this key internally — consumers just read `role` from 
 ```tsx
 // Authenticated users only
 <Route element={<ProtectedRoute />}>
-  <Route path="/" element={<HomePage />} />
+  <Route path="/checkout" element={<CheckoutPage />} />
+  <Route path="/orders" element={<OrderHistoryPage />} />
+  <Route path="/orders/:id" element={<OrderDetailPage />} />
 </Route>
 
 // Admin role required

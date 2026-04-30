@@ -1,10 +1,11 @@
 import { useState, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { ChevronDown, Plus, Check, Lock } from 'lucide-react'
+import { ChevronDown, Plus, Check, Lock, ChevronUp } from 'lucide-react'
 import { useAuth } from '@/hooks/useAuth'
 import { getAllPizzas } from '@/api/pizza.api'
 import { addToCart } from '@/api/cart.api'
+import { getAllToppings } from '@/api/topping.api'
 import Navbar from '@/components/Navbar'
 import CartDrawer from '@/components/CartDrawer'
 import type { Pizza, PizzaSize, PizzaType } from '@/types/pizza'
@@ -48,15 +49,38 @@ function PizzaCard({
 }: {
   pizza: Pizza
   isAuthenticated: boolean
-  onAddToCart: (variantId: string) => void
+  onAddToCart: (variantId: string, toppingIds: string[]) => void
 }) {
   const navigate = useNavigate()
   const available = pizza.variants.filter((v) => v.isAvailable)
   const [selectedId, setSelectedId] = useState(available[0]?.id ?? '')
+  const [selectedToppingIds, setSelectedToppingIds] = useState<string[]>([])
+  const [toppingsOpen, setToppingsOpen] = useState(false)
   const [added, setAdded] = useState(false)
+
+  const { data: toppings = [] } = useQuery({
+    queryKey: ['toppings'],
+    queryFn: getAllToppings,
+    staleTime: 1000 * 60 * 5,
+  })
+
+  const availableToppings = toppings.filter((t) => t.isAvailable)
 
   const selectedVariant = available.find((v) => v.id === selectedId)
   const gradient = TYPE_GRADIENTS[pizza.type] ?? TYPE_GRADIENTS['Custom']
+
+  const toppingTotal = selectedToppingIds.reduce((sum, tid) => {
+    const t = availableToppings.find((t) => t.id === tid)
+    return sum + (t?.price ?? 0)
+  }, 0)
+
+  const totalPrice = (selectedVariant?.price ?? 0) + toppingTotal
+
+  const toggleTopping = (id: string) => {
+    setSelectedToppingIds((prev) =>
+      prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]
+    )
+  }
 
   const handleAdd = () => {
     if (!isAuthenticated) {
@@ -64,9 +88,13 @@ function PizzaCard({
       return
     }
     if (!selectedId) return
-    onAddToCart(selectedId)
+    onAddToCart(selectedId, selectedToppingIds)
     setAdded(true)
-    setTimeout(() => setAdded(false), 2200)
+    setTimeout(() => {
+      setAdded(false)
+      setSelectedToppingIds([])
+      setToppingsOpen(false)
+    }, 2200)
   }
 
   return (
@@ -247,21 +275,116 @@ function PizzaCard({
           </div>
         )}
 
+        {/* Toppings toggle */}
+        {isAuthenticated && availableToppings.length > 0 && (
+          <div style={{ marginBottom: '14px' }}>
+            <button
+              onClick={() => setToppingsOpen((v) => !v)}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                width: '100%',
+                background: 'rgba(245, 236, 215, 0.04)',
+                border: '1px solid rgba(245, 236, 215, 0.1)',
+                borderRadius: '10px',
+                padding: '8px 12px',
+                cursor: 'pointer',
+                color: selectedToppingIds.length > 0 ? '#D4A44C' : '#8B7E72',
+                fontSize: '12px',
+                fontWeight: 500,
+                letterSpacing: '0.04em',
+                transition: 'all 0.2s',
+              }}
+              onMouseEnter={(e) => {
+                const el = e.currentTarget as HTMLElement
+                el.style.borderColor = 'rgba(245, 236, 215, 0.2)'
+                el.style.background = 'rgba(245, 236, 215, 0.07)'
+              }}
+              onMouseLeave={(e) => {
+                const el = e.currentTarget as HTMLElement
+                el.style.borderColor = 'rgba(245, 236, 215, 0.1)'
+                el.style.background = 'rgba(245, 236, 215, 0.04)'
+              }}
+            >
+              <span>
+                {selectedToppingIds.length > 0
+                  ? `${selectedToppingIds.length} topping${selectedToppingIds.length > 1 ? 's' : ''} selected`
+                  : 'Add toppings'}
+              </span>
+              {toppingsOpen ? <ChevronUp size={13} /> : <ChevronDown size={13} />}
+            </button>
+
+            {toppingsOpen && (
+              <div
+                style={{
+                  marginTop: '8px',
+                  display: 'grid',
+                  gridTemplateColumns: '1fr 1fr',
+                  gap: '6px',
+                  animation: 'slideUp 0.15s ease both',
+                }}
+              >
+                {availableToppings.map((topping) => {
+                  const selected = selectedToppingIds.includes(topping.id)
+                  return (
+                    <button
+                      key={topping.id}
+                      onClick={() => toggleTopping(topping.id)}
+                      style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'space-between',
+                        padding: '7px 10px',
+                        borderRadius: '8px',
+                        fontSize: '11px',
+                        cursor: 'pointer',
+                        transition: 'all 0.15s',
+                        background: selected ? 'rgba(212, 164, 76, 0.12)' : 'rgba(245, 236, 215, 0.04)',
+                        color: selected ? '#D4A44C' : '#8B7E72',
+                        border: selected
+                          ? '1px solid rgba(212, 164, 76, 0.35)'
+                          : '1px solid rgba(245, 236, 215, 0.1)',
+                        textAlign: 'left',
+                        gap: '4px',
+                      }}
+                    >
+                      <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', flex: 1 }}>
+                        {topping.name}
+                      </span>
+                      <span style={{ flexShrink: 0, fontWeight: 600 }}>
+                        +${topping.price.toFixed(2)}
+                      </span>
+                    </button>
+                  )
+                })}
+              </div>
+            )}
+          </div>
+        )}
+
         {/* Price + CTA */}
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <div>
             {selectedVariant ? (
-              <span
-                style={{
-                  fontFamily: '"Bodoni Moda", Georgia, serif',
-                  fontStyle: 'italic',
-                  fontSize: '22px',
-                  color: '#F5ECD7',
-                  lineHeight: 1,
-                }}
-              >
-                ${selectedVariant.price.toFixed(2)}
-              </span>
+              <div>
+                <span
+                  style={{
+                    fontFamily: '"Bodoni Moda", Georgia, serif',
+                    fontStyle: 'italic',
+                    fontSize: '22px',
+                    color: '#F5ECD7',
+                    lineHeight: 1,
+                  }}
+                >
+                  ${totalPrice.toFixed(2)}
+                </span>
+                {toppingTotal > 0 && (
+                  <div style={{ fontSize: '10px', color: '#8B7E72', marginTop: '2px' }}>
+                    incl. +${toppingTotal.toFixed(2)} toppings
+                  </div>
+                )}
+              </div>
             ) : (
               <span style={{ fontSize: '12px', color: '#8B7E72' }}>No sizes</span>
             )}
@@ -364,12 +487,12 @@ export default function HomePage() {
   const filteredPizzas =
     activeType === 'All' ? pizzas : pizzas.filter((p) => p.type === activeType)
 
-  const handleAddToCart = (pizzaVariantId: string) => {
+  const handleAddToCart = (pizzaVariantId: string, toppingIds: string[]) => {
     if (!isAuthenticated) {
       navigate('/login')
       return
     }
-    addPizzaToCart({ pizzaVariantId, quantity: 1, toppingIds: [] })
+    addPizzaToCart({ pizzaVariantId, quantity: 1, toppingIds })
     setCartOpen(true)
   }
 

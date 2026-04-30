@@ -28,7 +28,17 @@ There are no tests yet. When tests are added, this section should be updated.
 
 ## Security: Axios Version Lock
 
-**Do NOT change `"axios": "1.14.0"` to a range (`^`) or upgrade it.** Version `1.14.1` (current `latest` tag) and `0.30.4` are compromised by a supply-chain attack (2026-03-31). `1.14.0` is the last known-clean release and was chosen because `1.7.9` carried 3 CVEs (SSRF + 2× DoS). The exact pin is intentional. Only upgrade when a clean version is officially confirmed by the axios maintainers — and never run `npm audit fix --force` as it would resolve to the malicious `latest` tag.
+**Do NOT change `"axios": "1.15.0"` to a range (`^`) or upgrade it without verifying the release is clean.**
+
+### History
+- `1.14.1` and `0.30.4` — **MALICIOUS** (supply-chain attack, 2026-03-31, UNC1069/North Korea-nexus). Injected `plain-crypto-js@4.2.1` post-install hook to deploy a cross-platform RAT via C2. Attributed by Google Threat Intelligence Group on 2026-04-01.
+- `1.14.0` — last known-clean 1.x release before the attack.
+- `1.15.0` — **current safe pin**. Released post-attack by confirmed legitimate maintainers. Fixes `GHSA-3p68-rc4w-qgx5` (NO_PROXY hostname normalization bypass → SSRF, 2026-04-09, Critical).
+
+### Rules
+- Keep the version as an **exact pin** (no `^` or `~`).
+- Never run `npm audit fix --force` — it resolves to `latest` which may not be verified clean.
+- Before any future upgrade, check the [axios GitHub releases](https://github.com/axios/axios/releases) and cross-reference with [npm advisories](https://github.com/advisories?query=axios) to confirm no new compromise.
 
 ## Architecture
 

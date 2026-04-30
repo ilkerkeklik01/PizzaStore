@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
-import { ShoppingCart, LogOut, LayoutDashboard, ChevronDown, User } from 'lucide-react'
+import { ShoppingCart, LogOut, LayoutDashboard, ChevronDown, User, ClipboardList } from 'lucide-react'
 import { useQuery } from '@tanstack/react-query'
 import { useAuth } from '@/hooks/useAuth'
 import { getCart } from '@/api/cart.api'
@@ -112,6 +112,42 @@ export default function Navbar({ onCartOpen }: NavbarProps) {
           >
             <LayoutDashboard size={13} />
             Admin
+          </Link>
+        )}
+
+        {isAuthenticated && (
+          <Link
+            to="/orders"
+            style={{
+              fontSize: '11px',
+              letterSpacing: '0.14em',
+              fontWeight: 600,
+              color: '#8B7E72',
+              textDecoration: 'none',
+              textTransform: 'uppercase',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '5px',
+              padding: '6px 12px',
+              borderRadius: '6px',
+              border: '1px solid rgba(245, 236, 215, 0.1)',
+              transition: 'background 0.2s, color 0.2s, border-color 0.2s',
+            }}
+            onMouseEnter={(e) => {
+              const el = e.currentTarget as HTMLElement
+              el.style.background = 'rgba(245, 236, 215, 0.06)'
+              el.style.color = '#F5ECD7'
+              el.style.borderColor = 'rgba(245, 236, 215, 0.2)'
+            }}
+            onMouseLeave={(e) => {
+              const el = e.currentTarget as HTMLElement
+              el.style.background = 'transparent'
+              el.style.color = '#8B7E72'
+              el.style.borderColor = 'rgba(245, 236, 215, 0.1)'
+            }}
+          >
+            <ClipboardList size={13} />
+            Orders
           </Link>
         )}
 

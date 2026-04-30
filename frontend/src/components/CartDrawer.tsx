@@ -1,5 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { X, Plus, Minus, Trash2, ShoppingBag, ArrowRight } from 'lucide-react'
+import { useNavigate } from 'react-router-dom'
 import { useAuth } from '@/hooks/useAuth'
 import { getCart, removeFromCart, increaseQuantity, decreaseQuantity, clearCart } from '@/api/cart.api'
 
@@ -10,6 +11,7 @@ interface CartDrawerProps {
 
 export default function CartDrawer({ isOpen, onClose }: CartDrawerProps) {
   const { isAuthenticated } = useAuth()
+  const navigate = useNavigate()
   const queryClient = useQueryClient()
 
   const { data: cart, isLoading } = useQuery({
@@ -337,6 +339,10 @@ export default function CartDrawer({ isOpen, onClose }: CartDrawerProps) {
             </div>
 
             <button
+              onClick={() => {
+                onClose()
+                navigate('/checkout')
+              }}
               style={{
                 background: '#C44536',
                 color: '#F5ECD7',
