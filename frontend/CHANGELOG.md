@@ -5,6 +5,40 @@ All notable changes to the PizzaStore Frontend will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.4.0] - 2026-04-30
+
+### ✨ Added
+
+#### Profile Page (`src/pages/ProfilePage.tsx` — new)
+- Protected route at `/profile` (authenticated users only)
+- Identity card: 72px avatar circle with user initials, full name (Bodoni Moda italic), email
+- Account details grid: First Name, Last Name (from auth store), Email, User ID (from server, monospace)
+- Roles panel: colour-coded dot badges per role — gold for Admin, muted parchment for all others; "No roles assigned" fallback when empty
+- Data fetched fresh from `GET /api/auth/me` via TanStack Query (`['auth', 'me']` key, 5-minute stale time, `retry: false`)
+- Staggered `fadeIn` entrance animations on each panel section
+- Loading spinner + "Loading profile…" text while fetching; "Could not load profile data." error state
+
+#### New API Function
+- **`src/api/auth.api.ts`** — `getMe()` — `GET /api/auth/me` returning `{ userId, email, roles: string[] }`
+
+#### New TypeScript Type
+- **`src/types/auth.ts`** — `MeResponse` interface (`userId: string`, `email: string`, `roles: string[]`) matching the `GET /api/auth/me` response shape
+
+### 🔧 Changed
+
+- **`src/App.tsx`** — Added `/profile` route inside the existing authenticated `<ProtectedRoute>` outlet block
+- **`src/components/Navbar.tsx`** — Added "Profile" link (`UserCircle` icon) in the user dropdown above "Sign out"; navigates to `/profile` and closes the dropdown
+
+### 🔒 Security / Bug Fix
+
+- **`src/api/client.ts`** — Fixed overly broad 401 interceptor skip condition: previously skipped all `/auth/*` endpoints, meaning `GET /api/auth/me` 401s (expired/invalid token) would not trigger auto-logout. Now only `/auth/login` and `/auth/register` are excluded, which restores the intended auto-logout-on-401 behaviour for all other auth-namespace endpoints.
+
+### ✅ Verification
+
+- ✅ **Build:** TypeScript compilation clean (0 errors, `tsc --noEmit`)
+
+---
+
 ## [0.3.0] - 2026-04-09
 
 ### ✨ Added
