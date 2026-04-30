@@ -40,6 +40,7 @@ PizzaStore Frontend is a React SPA that targets the [PizzaStore Backend API](../
 - ✅ **Checkout Page** — Order review with item list and totals; `POST /api/order/checkout`; success confirmation with order ID and "Track Order" link
 - ✅ **Order History Page** — Full list of past orders sorted by date; colour-coded status badges; clickable rows navigate to order detail
 - ✅ **Order Detail Page** — Full order breakdown with progress timeline, item/topping snapshot, timestamps, and "Cancel Order" with confirmation modal
+- ✅ **Profile Page** — Protected page at `/profile`; displays user identity (name, email, user ID, roles) with fresh data from `GET /api/auth/me`; navbar dropdown "Profile" link navigates here
 - ✅ **Admin Page** — Protected placeholder (admin role required)
 
 ### Scaffold Ready
@@ -120,7 +121,7 @@ frontend/
 ├── src/
 │   ├── api/
 │   │   ├── client.ts           # Axios instance — Bearer token injection, 401 handling
-│   │   ├── auth.api.ts         # loginUser(), registerUser()
+│   │   ├── auth.api.ts         # loginUser(), registerUser(), getMe()
 │   │   ├── pizza.api.ts        # getAllPizzas(), getPizzaById(), getPizzasByType()
 │   │   ├── cart.api.ts         # getCart(), addToCart(), removeFromCart(), clearCart(), increase/decreaseQuantity()
 │   │   ├── topping.api.ts      # getAllToppings(), getToppingById()
@@ -138,11 +139,12 @@ frontend/
 │   │   ├── CheckoutPage.tsx    # Order review + place order + success confirmation (protected)
 │   │   ├── OrderHistoryPage.tsx # Paginated order list with status badges (protected)
 │   │   ├── OrderDetailPage.tsx  # Full order detail, progress timeline, cancel modal (protected)
+│   │   ├── ProfilePage.tsx     # User profile — name, email, user ID, roles (protected)
 │   │   └── AdminPage.tsx       # Admin dashboard (protected, placeholder)
 │   ├── store/
 │   │   └── authStore.ts        # Zustand store — token, user, role, expiry validation
 │   ├── types/
-│   │   ├── auth.ts             # UserInfo, AuthResponse, LoginDto, RegisterDto
+│   │   ├── auth.ts             # UserInfo, AuthResponse, LoginDto, RegisterDto, MeResponse
 │   │   ├── pizza.ts            # PizzaType, PizzaSize, PizzaVariant, Pizza
 │   │   ├── cart.ts             # CartItemTopping, CartItem, Cart, AddToCartDto
 │   │   ├── topping.ts          # Topping
@@ -171,6 +173,7 @@ frontend/
 | `/checkout` | `CheckoutPage` | User | Order review, place order, success confirmation |
 | `/orders` | `OrderHistoryPage` | User | All past orders with status badges |
 | `/orders/:id` | `OrderDetailPage` | User | Order detail, progress timeline, cancel |
+| `/profile` | `ProfilePage` | User | User identity — name, email, user ID, roles (server-fresh) |
 | `/admin` | `AdminPage` | Admin role | Admin dashboard (placeholder) |
 | `*` | Redirect | — | Catch-all → `/` |
 
@@ -217,6 +220,7 @@ The `authStore` handles this key internally — consumers just read `role` from 
   <Route path="/checkout" element={<CheckoutPage />} />
   <Route path="/orders" element={<OrderHistoryPage />} />
   <Route path="/orders/:id" element={<OrderDetailPage />} />
+  <Route path="/profile" element={<ProfilePage />} />
 </Route>
 
 // Admin role required
@@ -264,7 +268,7 @@ Inspired by Italian artisan pizzeria menus — warm, editorial, distinctive.
 
 - Base URL: `/api` (proxied to `https://localhost:5001` in development)
 - **Request interceptor:** attaches `Authorization: Bearer {token}` from Zustand store
-- **Response interceptor:** on 401 from non-auth endpoints → `logout()` + `window.location.href = '/login'`
+- **Response interceptor:** on 401 from any endpoint except `/auth/login` and `/auth/register` → `logout()` + `window.location.href = '/login'`
 
 ### Adding New API Modules
 

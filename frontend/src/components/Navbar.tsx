@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
-import { ShoppingCart, LogOut, LayoutDashboard, ChevronDown, User, ClipboardList } from 'lucide-react'
+import { ShoppingCart, LogOut, LayoutDashboard, ChevronDown, User, ClipboardList, UserCircle } from 'lucide-react'
 import { useQuery } from '@tanstack/react-query'
 import { useAuth } from '@/hooks/useAuth'
 import { getCart } from '@/api/cart.api'
@@ -303,6 +303,30 @@ export default function Navbar({ onCartOpen }: NavbarProps) {
                       </div>
                     )}
                   </div>
+                  <Link
+                    to="/profile"
+                    onClick={() => setProfileOpen(false)}
+                    style={{
+                      width: '100%',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '10px',
+                      padding: '9px 12px',
+                      background: 'none',
+                      border: 'none',
+                      cursor: 'pointer',
+                      color: '#F5ECD7',
+                      fontSize: '13px',
+                      borderRadius: '8px',
+                      textDecoration: 'none',
+                      transition: 'background 0.15s',
+                    }}
+                    onMouseEnter={(e) => ((e.currentTarget as HTMLElement).style.background = 'rgba(245, 236, 215, 0.06)')}
+                    onMouseLeave={(e) => ((e.currentTarget as HTMLElement).style.background = 'none')}
+                  >
+                    <UserCircle size={14} />
+                    Profile
+                  </Link>
                   <button
                     onClick={handleLogout}
                     style={{

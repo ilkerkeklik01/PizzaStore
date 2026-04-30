@@ -8,6 +8,7 @@ import AdminPage from '@/pages/AdminPage'
 import CheckoutPage from '@/pages/CheckoutPage'
 import OrderHistoryPage from '@/pages/OrderHistoryPage'
 import OrderDetailPage from '@/pages/OrderDetailPage'
+import ProfilePage from '@/pages/ProfilePage'
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -40,6 +41,7 @@ export default function App() {
             <Route path="/checkout" element={<CheckoutPage />} />
             <Route path="/orders" element={<OrderHistoryPage />} />
             <Route path="/orders/:id" element={<OrderDetailPage />} />
+            <Route path="/profile" element={<ProfilePage />} />
           </Route>
 
           <Route path="*" element={<Navigate to="/" replace />} />

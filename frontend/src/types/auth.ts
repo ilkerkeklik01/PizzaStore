@@ -21,3 +21,9 @@ export interface RegisterDto {
   email: string
   password: string
 }
+
+export interface MeResponse {
+  userId: string
+  email: string
+  roles: string[]
+}
