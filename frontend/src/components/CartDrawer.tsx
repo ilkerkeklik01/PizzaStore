@@ -1,8 +1,9 @@
+import { useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { X, Plus, Minus, Trash2, ShoppingBag, ArrowRight } from 'lucide-react'
+import { X, Plus, Minus, Trash2, ShoppingBag, ArrowRight, Check } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '@/hooks/useAuth'
-import { getCart, removeFromCart, increaseQuantity, decreaseQuantity, clearCart } from '@/api/cart.api'
+import { getCart, removeFromCart, increaseQuantity, decreaseQuantity, clearCart, updateCartItem } from '@/api/cart.api'
 
 interface CartDrawerProps {
   isOpen: boolean
@@ -13,6 +14,9 @@ export default function CartDrawer({ isOpen, onClose }: CartDrawerProps) {
   const { isAuthenticated } = useAuth()
   const navigate = useNavigate()
   const queryClient = useQueryClient()
+  const [editingItemId, setEditingItemId] = useState<string | null>(null)
+  const [editInstructions, setEditInstructions] = useState('')
+  const [qtyDrafts, setQtyDrafts] = useState<Record<string, string>>({})
 
   const { data: cart, isLoading } = useQuery({
     queryKey: ['cart'],
@@ -39,6 +43,15 @@ export default function CartDrawer({ isOpen, onClose }: CartDrawerProps) {
   const { mutate: clear, isPending: isClearing } = useMutation({
     mutationFn: clearCart,
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['cart'] }),
+  })
+
+  const { mutate: updateItem, isPending: isUpdating } = useMutation({
+    mutationFn: ({ id, quantity, specialInstructions }: { id: string; quantity: number; specialInstructions: string | null }) =>
+      updateCartItem(id, { quantity, specialInstructions }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['cart'] })
+      setEditingItemId(null)
+    },
   })
 
   const isMutating = isIncreasing || isDecreasing
@@ -200,7 +213,7 @@ export default function CartDrawer({ isOpen, onClose }: CartDrawerProps) {
                   }}
                 >
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '10px' }}>
-                    <div>
+                    <div style={{ flex: 1, minWidth: 0, marginRight: '10px' }}>
                       <div
                         style={{
                           fontSize: '14px',
@@ -211,11 +224,120 @@ export default function CartDrawer({ isOpen, onClose }: CartDrawerProps) {
                       >
                         {item.pizzaName}
                       </div>
-                      <div style={{ fontSize: '12px', color: '#8B7E72' }}>
+                      <div style={{ fontSize: '12px', color: '#8B7E72', marginBottom: item.specialInstructions || editingItemId === item.id ? '8px' : '0' }}>
                         {item.pizzaVariantName}
                         {item.toppings.length > 0 &&
                           ` · ${item.toppings.length} topping${item.toppings.length > 1 ? 's' : ''}`}
                       </div>
+
+                      {/* Special instructions display / inline edit */}
+                      {editingItemId === item.id ? (
+                        <div>
+                          <textarea
+                            value={editInstructions}
+                            onChange={(e) => setEditInstructions(e.target.value)}
+                            maxLength={500}
+                            rows={2}
+                            placeholder="Special requests…"
+                            style={{
+                              width: '100%',
+                              boxSizing: 'border-box',
+                              background: 'rgba(245, 236, 215, 0.04)',
+                              border: '1px solid rgba(212, 164, 76, 0.35)',
+                              borderRadius: '8px',
+                              padding: '7px 10px',
+                              fontSize: '11px',
+                              color: '#F5ECD7',
+                              resize: 'none',
+                              outline: 'none',
+                              fontFamily: 'DM Sans, sans-serif',
+                              lineHeight: 1.5,
+                            }}
+                            autoFocus
+                          />
+                          <div style={{ display: 'flex', gap: '8px', marginTop: '6px' }}>
+                            <button
+                              onClick={() =>
+                                updateItem({
+                                  id: item.id,
+                                  quantity: item.quantity,
+                                  specialInstructions: editInstructions.trim() || null,
+                                })
+                              }
+                              disabled={isUpdating}
+                              style={{
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: '4px',
+                                background: 'rgba(212, 164, 76, 0.15)',
+                                border: '1px solid rgba(212, 164, 76, 0.35)',
+                                borderRadius: '6px',
+                                padding: '4px 10px',
+                                fontSize: '11px',
+                                color: '#D4A44C',
+                                cursor: 'pointer',
+                                opacity: isUpdating ? 0.5 : 1,
+                              }}
+                            >
+                              <Check size={10} />
+                              Save
+                            </button>
+                            <button
+                              onClick={() => setEditingItemId(null)}
+                              style={{
+                                background: 'none',
+                                border: 'none',
+                                padding: '4px 8px',
+                                fontSize: '11px',
+                                color: '#8B7E72',
+                                cursor: 'pointer',
+                              }}
+                            >
+                              Cancel
+                            </button>
+                          </div>
+                        </div>
+                      ) : (
+                        <div>
+                          {item.specialInstructions && (
+                            <div
+                              style={{
+                                fontSize: '11px',
+                                color: '#D4A44C',
+                                background: 'rgba(212, 164, 76, 0.08)',
+                                border: '1px solid rgba(212, 164, 76, 0.18)',
+                                borderRadius: '6px',
+                                padding: '4px 8px',
+                                marginBottom: '5px',
+                                lineHeight: 1.45,
+                                fontStyle: 'italic',
+                              }}
+                            >
+                              {item.specialInstructions}
+                            </div>
+                          )}
+                          <button
+                            onClick={() => {
+                              setEditingItemId(item.id)
+                              setEditInstructions(item.specialInstructions ?? '')
+                            }}
+                            style={{
+                              background: 'none',
+                              border: 'none',
+                              padding: '0',
+                              fontSize: '10px',
+                              color: '#8B7E72',
+                              cursor: 'pointer',
+                              textDecoration: 'underline',
+                              textDecorationStyle: 'dotted',
+                              textUnderlineOffset: '2px',
+                              letterSpacing: '0.03em',
+                            }}
+                          >
+                            {item.specialInstructions ? 'Edit note' : 'Add note'}
+                          </button>
+                        </div>
+                      )}
                     </div>
                     <button
                       onClick={() => remove(item.id)}
@@ -228,6 +350,7 @@ export default function CartDrawer({ isOpen, onClose }: CartDrawerProps) {
                         display: 'flex',
                         alignItems: 'center',
                         transition: 'color 0.2s',
+                        flexShrink: 0,
                       }}
                       onMouseEnter={(e) => ((e.currentTarget as HTMLElement).style.color = '#C44536')}
                       onMouseLeave={(e) => ((e.currentTarget as HTMLElement).style.color = '#8B7E72')}
@@ -259,17 +382,43 @@ export default function CartDrawer({ isOpen, onClose }: CartDrawerProps) {
                       >
                         <Minus size={11} />
                       </button>
-                      <span
+                      <input
+                        type="number"
+                        min={1}
+                        value={qtyDrafts[item.id] ?? String(item.quantity)}
+                        onChange={(e) =>
+                          setQtyDrafts((prev) => ({ ...prev, [item.id]: e.target.value }))
+                        }
+                        onBlur={() => {
+                          const raw = qtyDrafts[item.id]
+                          if (raw === undefined) return
+                          const parsed = parseInt(raw, 10)
+                          if (!isNaN(parsed) && parsed >= 1 && parsed !== item.quantity) {
+                            updateItem({ id: item.id, quantity: parsed, specialInstructions: item.specialInstructions ?? null })
+                          }
+                          setQtyDrafts((prev) => { const next = { ...prev }; delete next[item.id]; return next })
+                        }}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter') (e.currentTarget as HTMLInputElement).blur()
+                          if (e.key === 'Escape') {
+                            setQtyDrafts((prev) => { const next = { ...prev }; delete next[item.id]; return next })
+                          }
+                        }}
                         style={{
+                          width: '38px',
+                          textAlign: 'center',
+                          background: 'rgba(245, 236, 215, 0.06)',
+                          border: '1px solid rgba(245, 236, 215, 0.15)',
+                          borderRadius: '6px',
+                          padding: '2px 4px',
                           fontSize: '14px',
                           fontWeight: 700,
                           color: '#F5ECD7',
-                          minWidth: '20px',
-                          textAlign: 'center',
-                        }}
-                      >
-                        {item.quantity}
-                      </span>
+                          outline: 'none',
+                          MozAppearance: 'textfield',
+                        } as React.CSSProperties}
+                        onFocus={(e) => (e.currentTarget.style.borderColor = 'rgba(196, 69, 54, 0.5)')}
+                      />
                       <button
                         onClick={() => increase(item.id)}
                         disabled={isMutating}

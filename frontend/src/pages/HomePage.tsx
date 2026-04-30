@@ -49,13 +49,15 @@ function PizzaCard({
 }: {
   pizza: Pizza
   isAuthenticated: boolean
-  onAddToCart: (variantId: string, toppingIds: string[]) => void
+  onAddToCart: (variantId: string, toppingIds: string[], specialInstructions?: string) => void
 }) {
   const navigate = useNavigate()
   const available = pizza.variants.filter((v) => v.isAvailable)
   const [selectedId, setSelectedId] = useState(available[0]?.id ?? '')
   const [selectedToppingIds, setSelectedToppingIds] = useState<string[]>([])
   const [toppingsOpen, setToppingsOpen] = useState(false)
+  const [instructionsOpen, setInstructionsOpen] = useState(false)
+  const [specialInstructions, setSpecialInstructions] = useState('')
   const [added, setAdded] = useState(false)
 
   const { data: toppings = [] } = useQuery({
@@ -88,12 +90,14 @@ function PizzaCard({
       return
     }
     if (!selectedId) return
-    onAddToCart(selectedId, selectedToppingIds)
+    onAddToCart(selectedId, selectedToppingIds, specialInstructions.trim() || undefined)
     setAdded(true)
     setTimeout(() => {
       setAdded(false)
       setSelectedToppingIds([])
       setToppingsOpen(false)
+      setInstructionsOpen(false)
+      setSpecialInstructions('')
     }, 2200)
   }
 
@@ -363,6 +367,65 @@ function PizzaCard({
           </div>
         )}
 
+        {/* Special instructions */}
+        {isAuthenticated && (
+          <div style={{ marginBottom: '14px' }}>
+            <button
+              onClick={() => setInstructionsOpen((v) => !v)}
+              style={{
+                background: 'none',
+                border: 'none',
+                padding: '0',
+                cursor: 'pointer',
+                fontSize: '11px',
+                color: instructionsOpen || specialInstructions ? '#D4A44C' : '#8B7E72',
+                letterSpacing: '0.04em',
+                textDecoration: 'underline',
+                textDecorationStyle: 'dotted',
+                textUnderlineOffset: '3px',
+                transition: 'color 0.15s',
+              }}
+            >
+              {specialInstructions
+                ? 'Edit special request'
+                : instructionsOpen
+                  ? 'Hide special request'
+                  : 'Add special request'}
+            </button>
+            {instructionsOpen && (
+              <div style={{ marginTop: '8px', animation: 'slideUp 0.15s ease both' }}>
+                <textarea
+                  value={specialInstructions}
+                  onChange={(e) => setSpecialInstructions(e.target.value)}
+                  maxLength={500}
+                  placeholder="e.g. extra crispy, no onions, well-done…"
+                  rows={3}
+                  style={{
+                    width: '100%',
+                    boxSizing: 'border-box',
+                    background: 'rgba(245, 236, 215, 0.04)',
+                    border: '1px solid rgba(245, 236, 215, 0.12)',
+                    borderRadius: '10px',
+                    padding: '9px 12px',
+                    fontSize: '12px',
+                    color: '#F5ECD7',
+                    resize: 'none',
+                    outline: 'none',
+                    fontFamily: 'DM Sans, sans-serif',
+                    lineHeight: 1.55,
+                    transition: 'border-color 0.2s',
+                  }}
+                  onFocus={(e) => (e.currentTarget.style.borderColor = 'rgba(212, 164, 76, 0.4)')}
+                  onBlur={(e) => (e.currentTarget.style.borderColor = 'rgba(245, 236, 215, 0.12)')}
+                />
+                <div style={{ fontSize: '10px', color: '#8B7E72', textAlign: 'right', marginTop: '3px' }}>
+                  {specialInstructions.length}/500
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+
         {/* Price + CTA */}
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <div>
@@ -487,12 +550,12 @@ export default function HomePage() {
   const filteredPizzas =
     activeType === 'All' ? pizzas : pizzas.filter((p) => p.type === activeType)
 
-  const handleAddToCart = (pizzaVariantId: string, toppingIds: string[]) => {
+  const handleAddToCart = (pizzaVariantId: string, toppingIds: string[], specialInstructions?: string) => {
     if (!isAuthenticated) {
       navigate('/login')
       return
     }
-    addPizzaToCart({ pizzaVariantId, quantity: 1, toppingIds })
+    addPizzaToCart({ pizzaVariantId, quantity: 1, toppingIds, specialInstructions })
     setCartOpen(true)
   }
 
