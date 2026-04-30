@@ -951,6 +951,7 @@ export default function HomePage() {
               display: 'grid',
               gridTemplateColumns: 'repeat(auto-fill, minmax(290px, 1fr))',
               gap: '22px',
+              alignItems: 'start',
             }}
           >
             {filteredPizzas.map((pizza) => (
