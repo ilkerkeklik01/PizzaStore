@@ -35,3 +35,8 @@ export interface AddToCartDto {
   specialInstructions?: string
   toppingIds: string[]
 }
+
+export interface UpdateCartItemDto {
+  quantity: number
+  specialInstructions?: string | null
+}
