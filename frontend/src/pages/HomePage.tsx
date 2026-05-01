@@ -1,13 +1,14 @@
 import { useState, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { ChevronDown, Plus, Check, Lock, ChevronUp } from 'lucide-react'
+import { ChevronDown, Plus, Check, Lock, ChevronUp, Layers } from 'lucide-react'
 import { useAuth } from '@/hooks/useAuth'
-import { getAllPizzas } from '@/api/pizza.api'
+import { getAllPizzas, getPizzasByType } from '@/api/pizza.api'
 import { addToCart } from '@/api/cart.api'
 import { getAllToppings } from '@/api/topping.api'
 import Navbar from '@/components/Navbar'
 import CartDrawer from '@/components/CartDrawer'
+import ToppingsDrawer from '@/components/ToppingsDrawer'
 import type { Pizza, PizzaSize, PizzaType } from '@/types/pizza'
 
 // ─── Constants ────────────────────────────────────────────────────────────────
@@ -536,19 +537,17 @@ export default function HomePage() {
   const menuRef = useRef<HTMLDivElement>(null)
   const [cartOpen, setCartOpen] = useState(false)
   const [activeType, setActiveType] = useState<'All' | PizzaType>('All')
+  const [toppingsOpen, setToppingsOpen] = useState(false)
 
   const { data: pizzas = [], isLoading } = useQuery({
-    queryKey: ['pizzas'],
-    queryFn: getAllPizzas,
+    queryKey: ['pizzas', activeType],
+    queryFn: activeType === 'All' ? getAllPizzas : () => getPizzasByType(activeType),
   })
 
   const { mutate: addPizzaToCart } = useMutation({
     mutationFn: addToCart,
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['cart'] }),
   })
-
-  const filteredPizzas =
-    activeType === 'All' ? pizzas : pizzas.filter((p) => p.type === activeType)
 
   const handleAddToCart = (pizzaVariantId: string, toppingIds: string[], specialInstructions?: string) => {
     if (!isAuthenticated) {
@@ -823,44 +822,79 @@ export default function HomePage() {
         style={{ padding: 'clamp(48px, 8vw, 96px) clamp(20px, 5vw, 60px)', maxWidth: '1280px', margin: '0 auto' }}
       >
         {/* Section header */}
-        <div style={{ marginBottom: '44px' }}>
-          <p
+        <div style={{ marginBottom: '44px', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end' }}>
+          <div>
+            <p
+              style={{
+                fontSize: '11px',
+                letterSpacing: '0.32em',
+                fontWeight: 700,
+                color: '#C44536',
+                textTransform: 'uppercase',
+                marginBottom: '12px',
+              }}
+            >
+              Our Menu
+            </p>
+            <h2
+              style={{
+                fontFamily: '"Bodoni Moda", Georgia, serif',
+                fontStyle: 'italic',
+                fontSize: 'clamp(30px, 4vw, 52px)',
+                color: '#F5ECD7',
+                margin: '0 0 16px 0',
+                lineHeight: 1.1,
+              }}
+            >
+              Artisanal Pizzas
+            </h2>
+            <p
+              style={{
+                fontSize: '14px',
+                color: '#8B7E72',
+                maxWidth: '480px',
+                lineHeight: 1.7,
+                margin: 0,
+              }}
+            >
+              {isAuthenticated
+                ? 'Select your preferred size and add directly to your cart. Each pizza is hand-crafted to order.'
+                : 'Browse our full menu below. Sign in to unlock ordering and cart features.'}
+            </p>
+          </div>
+          <button
+            type="button"
+            onClick={() => setToppingsOpen(true)}
             style={{
-              fontSize: '11px',
-              letterSpacing: '0.32em',
-              fontWeight: 700,
-              color: '#C44536',
-              textTransform: 'uppercase',
-              marginBottom: '12px',
-            }}
-          >
-            Our Menu
-          </p>
-          <h2
-            style={{
-              fontFamily: '"Bodoni Moda", Georgia, serif',
-              fontStyle: 'italic',
-              fontSize: 'clamp(30px, 4vw, 52px)',
-              color: '#F5ECD7',
-              margin: '0 0 16px 0',
-              lineHeight: 1.1,
-            }}
-          >
-            Artisanal Pizzas
-          </h2>
-          <p
-            style={{
-              fontSize: '14px',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '8px',
+              padding: '10px 18px',
+              borderRadius: '24px',
+              fontSize: '13px',
+              fontWeight: 500,
+              background: 'rgba(245, 236, 215, 0.06)',
               color: '#8B7E72',
-              maxWidth: '480px',
-              lineHeight: 1.7,
-              margin: 0,
+              border: '1px solid rgba(245, 236, 215, 0.12)',
+              cursor: 'pointer',
+              transition: 'all 0.2s',
+              letterSpacing: '0.03em',
+              flexShrink: 0,
+            }}
+            onMouseEnter={(e) => {
+              const el = e.currentTarget as HTMLElement
+              el.style.borderColor = 'rgba(245, 236, 215, 0.25)'
+              el.style.color = '#F5ECD7'
+            }}
+            onMouseLeave={(e) => {
+              const el = e.currentTarget as HTMLElement
+              el.style.borderColor = 'rgba(245, 236, 215, 0.12)'
+              el.style.color = '#8B7E72'
             }}
           >
-            {isAuthenticated
-              ? 'Select your preferred size and add directly to your cart. Each pizza is hand-crafted to order.'
-              : 'Browse our full menu below. Sign in to unlock ordering and cart features.'}
-          </p>
+            <Layers size={14} />
+            View All Toppings
+          </button>
         </div>
 
         {/* Category filter */}
@@ -934,7 +968,7 @@ export default function HomePage() {
               Loading menu…
             </span>
           </div>
-        ) : filteredPizzas.length === 0 ? (
+        ) : pizzas.length === 0 ? (
           <div
             style={{
               textAlign: 'center',
@@ -954,7 +988,7 @@ export default function HomePage() {
               alignItems: 'start',
             }}
           >
-            {filteredPizzas.map((pizza) => (
+            {pizzas.map((pizza) => (
               <PizzaCard
                 key={pizza.id}
                 pizza={pizza}
@@ -1002,6 +1036,7 @@ export default function HomePage() {
 
       {/* Cart drawer */}
       <CartDrawer isOpen={cartOpen} onClose={() => setCartOpen(false)} />
+      <ToppingsDrawer isOpen={toppingsOpen} onClose={() => setToppingsOpen(false)} />
     </div>
   )
 }
