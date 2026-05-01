@@ -5,6 +5,36 @@ All notable changes to the PizzaStore Frontend will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.5.0] - 2026-05-01
+
+### ✨ Added
+
+#### Toppings Browser Drawer (`src/components/ToppingsDrawer.tsx` — new)
+- Right-side slide-in panel (400px, same `cubic-bezier(0.32,0,0.24,1)` transition as `CartDrawer`) triggered by a "View All Toppings" button in the menu section header
+- Lists all toppings (available and unavailable); available toppings show name + price in full parchment; unavailable toppings are greyed-out at 50% opacity with an "Unavailable" badge
+- Footer shows available count: `X topping(s) available`
+- **Public** — no authentication required; accessible to guests and signed-in users alike
+- Shares the `['toppings']` TanStack Query cache key with `PizzaCard` — opening the drawer while pizza cards are mounted never fires a duplicate `GET /api/topping` request
+
+#### "View All Toppings" Button (`src/pages/HomePage.tsx`)
+- Ghost pill button added to the right side of the "Our Menu" section header
+- Opens `ToppingsDrawer` on click; visible to all users
+
+### 🔧 Changed
+
+#### Server-Side Pizza Type Filtering (`src/pages/HomePage.tsx`)
+- Pizza type filter buttons now call `GET /api/pizza/type/{type}` via `getPizzasByType()` instead of filtering the already-fetched full list client-side
+- Query key updated from `['pizzas']` to `['pizzas', activeType]` — each type gets its own cache entry; switching back to a previously-seen type is instant from cache
+- Selecting "All" continues to call `GET /api/pizza` (via `getAllPizzas`); its cache key is `['pizzas', 'All']`
+- Removed the client-side `filteredPizzas` derived variable; JSX uses the query result directly
+- Existing `isLoading` spinner covers in-flight type-filter fetches with no UI change needed
+
+### ✅ Verification
+
+- ✅ **Build:** TypeScript compilation clean (0 errors, `tsc --noEmit`)
+
+---
+
 ## [0.4.1] - 2026-05-01
 
 ### 🐛 Fixed

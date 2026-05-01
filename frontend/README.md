@@ -31,7 +31,8 @@ PizzaStore Frontend is a React SPA that targets the [PizzaStore Backend API](../
 - ✅ **Public Homepage** — Accessible to all three roles (unauthenticated, user, admin)
   - Cinematic hero section with animated decorative rings and scroll CTA
   - Stats bar (categories, sizes, quality indicators)
-  - 8-category filter pills with live pizza grid filtering
+  - 8-category filter pills — **server-side filtered** via `GET /api/pizza/type/{type}`; per-type TanStack Query cache means switching back to a seen type is instant
+  - "View All Toppings" ghost button in the menu header opens a slide-in `ToppingsDrawer` (public, no auth required)
   - Pizza cards with size selector, topping selector, collapsible special instructions textarea, live price update, "Add to Cart" / "Sign in to Order" (role-aware), "Added!" 2.2s confirmation; expanding toppings or special instructions on one card does not affect adjacent cards in the same row
   - Cart drawer — inline quantity input (direct value entry via `PUT /api/cart/items/{id}`), increase/decrease quantity, remove item, clear cart, "Proceed to Checkout" navigates to `/checkout`; special instructions displayed as amber pill with inline edit
 - ✅ **Topping Selection** — Collapsible per-card topping grid; gold highlight on selection; live price update includes topping cost; `toppingIds` sent to cart API
@@ -130,7 +131,8 @@ frontend/
 │   ├── components/
 │   │   ├── ProtectedRoute.tsx  # Role-aware route guard (requireAdmin prop)
 │   │   ├── Navbar.tsx          # Fixed top bar — Orders link, cart badge, profile dropdown, scroll blur
-│   │   └── CartDrawer.tsx      # Right-side slide-in cart panel — full CRUD + checkout navigation
+│   │   ├── CartDrawer.tsx      # Right-side slide-in cart panel — full CRUD + checkout navigation
+│   │   └── ToppingsDrawer.tsx  # Right-side slide-in toppings browser — public, shows all toppings with availability
 │   ├── hooks/
 │   │   └── useAuth.ts          # Single shallow-equality Zustand selector (useShallow)
 │   ├── pages/
@@ -191,9 +193,9 @@ POST /api/auth/login
 
 | State | Hero Buttons | Pizza Cards | Navbar |
 |---|---|---|---|
-| Unauthenticated | Explore Our Menu + Create Account | "Sign in to Order" (no topping selector) | Sign in link |
-| Regular User | Explore Our Menu | "Add to Cart" + topping selector | Orders link + cart badge + profile dropdown |
-| Admin | Explore Our Menu | "Add to Cart" + topping selector | Orders link + cart badge + profile dropdown + Admin link |
+| Unauthenticated | Explore Our Menu + Create Account | "Sign in to Order" (no per-card topping selector); "View All Toppings" drawer available | Sign in link |
+| Regular User | Explore Our Menu | "Add to Cart" + per-card topping selector; "View All Toppings" drawer available | Orders link + cart badge + profile dropdown |
+| Admin | Explore Our Menu | "Add to Cart" + per-card topping selector; "View All Toppings" drawer available | Orders link + cart badge + profile dropdown + Admin link |
 
 ## 🔐 Authentication & Authorization
 
