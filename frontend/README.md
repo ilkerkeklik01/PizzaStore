@@ -32,9 +32,10 @@ PizzaStore Frontend is a React SPA that targets the [PizzaStore Backend API](../
   - Cinematic hero section with animated decorative rings and scroll CTA
   - Stats bar (categories, sizes, quality indicators)
   - 8-category filter pills with live pizza grid filtering
-  - Pizza cards with size selector, topping selector, live price update, "Add to Cart" / "Sign in to Order" (role-aware), "Added!" 2.2s confirmation
-  - Cart drawer — add, increase/decrease quantity, remove item, clear cart, "Proceed to Checkout" navigates to `/checkout`
+  - Pizza cards with size selector, topping selector, collapsible special instructions textarea, live price update, "Add to Cart" / "Sign in to Order" (role-aware), "Added!" 2.2s confirmation; expanding toppings or special instructions on one card does not affect adjacent cards in the same row
+  - Cart drawer — inline quantity input (direct value entry via `PUT /api/cart/items/{id}`), increase/decrease quantity, remove item, clear cart, "Proceed to Checkout" navigates to `/checkout`; special instructions displayed as amber pill with inline edit
 - ✅ **Topping Selection** — Collapsible per-card topping grid; gold highlight on selection; live price update includes topping cost; `toppingIds` sent to cart API
+- ✅ **Special Instructions** — Collapsible per-card textarea (max 500 chars); value sent to cart on "Add to Cart"; displayed in cart drawer as amber pill with inline edit; rendered in order detail view
 - ✅ **Navbar** — Fixed top bar, scroll-aware frosted-glass blur, cart badge (real-time quantity), "Orders" link, profile dropdown (email, Admin badge, sign out), admin-only panel link
 - ✅ **Cart Integration** — TanStack Query `['cart']` cache invalidated on every mutation; badge stays in sync across drawer and pizza cards
 - ✅ **Checkout Page** — Order review with item list and totals; `POST /api/order/checkout`; success confirmation with order ID and "Track Order" link
@@ -123,7 +124,7 @@ frontend/
 │   │   ├── client.ts           # Axios instance — Bearer token injection, 401 handling
 │   │   ├── auth.api.ts         # loginUser(), registerUser(), getMe()
 │   │   ├── pizza.api.ts        # getAllPizzas(), getPizzaById(), getPizzasByType()
-│   │   ├── cart.api.ts         # getCart(), addToCart(), removeFromCart(), clearCart(), increase/decreaseQuantity()
+│   │   ├── cart.api.ts         # getCart(), addToCart(), removeFromCart(), clearCart(), increase/decreaseQuantity(), updateCartItem()
 │   │   ├── topping.api.ts      # getAllToppings(), getToppingById()
 │   │   └── order.api.ts        # checkoutCart(), getMyOrders(), getOrderById(), cancelOrder()
 │   ├── components/
@@ -146,7 +147,7 @@ frontend/
 │   ├── types/
 │   │   ├── auth.ts             # UserInfo, AuthResponse, LoginDto, RegisterDto, MeResponse
 │   │   ├── pizza.ts            # PizzaType, PizzaSize, PizzaVariant, Pizza
-│   │   ├── cart.ts             # CartItemTopping, CartItem, Cart, AddToCartDto
+│   │   ├── cart.ts             # CartItemTopping, CartItem, Cart, AddToCartDto, UpdateCartItemDto
 │   │   ├── topping.ts          # Topping
 │   │   └── order.ts            # OrderStatus, OrderItemTopping, OrderItem, Order
 │   ├── lib/

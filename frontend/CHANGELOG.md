@@ -5,6 +5,19 @@ All notable changes to the PizzaStore Frontend will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.4.1] - 2026-05-01
+
+### 🐛 Fixed
+
+- **`src/pages/HomePage.tsx`** — Pizza card grid layout shift when expanding toppings or special instructions panel. CSS Grid's default `align-items: stretch` caused every card in the same row to grow to the height of the tallest card; adding `alignItems: 'start'` to the grid container makes each card size independently so expanding one card never affects its neighbours.
+
+### ✅ Verification
+
+- ✅ **Build:** TypeScript compilation clean (0 errors, `tsc --noEmit`)
+- ✅ **Manual:** Playwright screenshots confirmed adjacent cards are unaffected when toppings or special instructions are expanded on any card
+
+---
+
 ## [0.4.0] - 2026-04-30
 
 ### ✨ Added
@@ -32,6 +45,33 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### 🔒 Security / Bug Fix
 
 - **`src/api/client.ts`** — Fixed overly broad 401 interceptor skip condition: previously skipped all `/auth/*` endpoints, meaning `GET /api/auth/me` 401s (expired/invalid token) would not trigger auto-logout. Now only `/auth/login` and `/auth/register` are excluded, which restores the intended auto-logout-on-401 behaviour for all other auth-namespace endpoints.
+
+### ✅ Verification
+
+- ✅ **Build:** TypeScript compilation clean (0 errors, `tsc --noEmit`)
+
+---
+
+## [0.3.1] - 2026-04-30
+
+### ✨ Added
+
+#### Special Instructions on Pizza Cards (`src/pages/HomePage.tsx`)
+- Collapsible "Add special request" button below the topping selector on each `PizzaCard`
+- Expands a textarea (max 500 chars) to capture per-item cooking notes (e.g. "extra crispy, no onions")
+- `specialInstructions` passed to `addToCart()` on "Add to Cart"; field resets after successful add
+- Order Detail Page already renders special instructions in italics below the item name (in place since v0.3.0)
+
+#### Direct Quantity Setter in Cart Drawer (`src/components/CartDrawer.tsx`)
+- Replaces the static quantity span with a `<input type="number">` (min 1, max 99) inline in each cart row
+- `blur` or `Enter` fires `PUT /api/cart/items/{id}` via `updateCartItem()` to set quantity directly without step-clicking `−`/`+`
+- Special instructions displayed as an amber pill beneath the item name; inline edit flow (textarea + Save / Cancel) also calls `PUT /api/cart/items/{id}` atomically
+
+#### New API Function
+- **`src/api/cart.api.ts`** — `updateCartItem(itemId, dto)` — `PUT /api/cart/items/{id}` accepting `{ quantity?, specialInstructions? }`
+
+#### New TypeScript Type
+- **`src/types/cart.ts`** — `UpdateCartItemDto` (`quantity?: number`, `specialInstructions?: string`)
 
 ### ✅ Verification
 
