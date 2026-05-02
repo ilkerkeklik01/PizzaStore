@@ -9,6 +9,24 @@
             "command": "cd /Users/ilkerkeklik/Desktop/Projects/PizzaStore/backend && dotnet build --no-restore -v q 2>&1 | tail -5"
           }
         ]
+      },
+      {
+        "matcher": "Edit|Write",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "echo '$CLAUDE_TOOL_INPUT' | grep -q 'frontend/src' && cd /Users/ilkerkeklik/Desktop/Projects/PizzaStore/frontend && npx tsc --noEmit 2>&1 | tail -10 || exit 0"
+          }
+        ]
+      },
+      {
+        "matcher": "Edit|Write",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "echo '$CLAUDE_TOOL_INPUT' | grep -q 'PizzaStore.Application' && cd /Users/ilkerkeklik/Desktop/Projects/PizzaStore/backend && dotnet test tests/PizzaStore.Application.Tests --no-build -q 2>&1 | tail -8 || exit 0"
+          }
+        ]
       }
     ],
     "PreToolUse": [
