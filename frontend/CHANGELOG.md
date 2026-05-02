@@ -5,6 +5,56 @@ All notable changes to the PizzaStore Frontend will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.6.0] - 2026-05-02
+
+### ✨ Added
+
+#### Order History Filtering & Pagination (`src/pages/OrderHistoryPage.tsx`)
+- **Filter bar** — dark card with three inputs:
+  - Status dropdown: "All Statuses", Pending, Confirmed, Preparing, Out for Delivery, Delivered, Cancelled (native `<select>`, styled dark with parchment text)
+  - "From date" labeled date picker (native `<input type="date">`, visually labeled for clarity)
+  - "To date" labeled date picker (native `<input type="date">`, visually labeled for clarity)
+  - "Clear filters" button appears only when at least one filter is active (hidden otherwise)
+- **Immediate filtering** — Filters apply instantly on selection/input change (no "Apply Filters" button); TanStack Query `queryKey: ['orders', filters]` re-fetches on any filter change
+- **Pagination controls** — Always-visible pagination bar showing:
+  - "Showing X–Y of Z orders" result count
+  - "Page X of Y" indicator
+  - Prev/Next buttons (disabled and visually muted when not applicable: prev disabled on page 1, next disabled on last page)
+- **Empty state with filters** — When filters are active and no orders match: "No orders match your filters" heading + "Try adjusting or clearing the filters above" message + "Clear Filters" button (styled as terracotta CTA)
+- **Order count in header** — "X order(s) placed" text shows total count from server (only visible when not loading and totalCount > 0)
+
+### 🔧 Changed
+
+- **Backend-driven pagination** — `GET /api/order` now accepts optional query params:
+  - `status` (OrderStatus enum value or null for all statuses)
+  - `fromDate` (ISO date string, inclusive boundary)
+  - `toDate` (ISO date string, inclusive boundary; server adds 1 day for boundary matching)
+  - `page` (default 1; clamped to min 1)
+  - `pageSize` (default 10; clamped to min 1, max 100)
+- **Response format** — `GET /api/order` now returns `PagedResult<OrderDto>` containing:
+  - `items: OrderDto[]` (paginated list, sorted by createdAt descending)
+  - `totalCount: int` (total matching orders across all pages)
+  - `page: int` (current page number, 1-based)
+  - `pageSize: int` (orders per page)
+  - `totalPages: int` (calculated as ⌈totalCount / pageSize⌉)
+- **API client** — `src/api/order.api.ts`:
+  - `getMyOrders()` now accepts optional `OrderFilterParams` with status, fromDate, toDate, page, pageSize
+  - Return type changed from `Order[]` to `PagedResult<Order>`
+- **Page header order count** — Updated to display server-reported `totalCount` instead of client-side `orders.length`
+
+### ✅ Verification
+
+- ✅ **Build:** TypeScript compilation clean (0 errors, `tsc --noEmit`)
+- ✅ **Testing:** Playwright verified:
+  - Date picker labels ("From date", "To date") are visible and clear
+  - Status filter applies immediately without Apply button
+  - Date filters apply immediately on input
+  - Pagination controls always visible (even with 1 order); disabled states visually distinct
+  - "Clear filters" button appears/disappears based on filter state
+  - Empty state messaging correct for active filters vs. no orders
+
+---
+
 ## [0.5.0] - 2026-05-01
 
 ### ✨ Added

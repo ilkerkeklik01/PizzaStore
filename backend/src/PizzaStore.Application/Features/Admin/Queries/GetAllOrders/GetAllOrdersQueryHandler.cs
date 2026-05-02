@@ -18,37 +18,20 @@ public class GetAllOrdersQueryHandler : IRequestHandler<GetAllOrdersQuery, List<
 
     public async Task<List<OrderDto>> Handle(GetAllOrdersQuery request, CancellationToken cancellationToken)
     {
-        // Get all orders from repository
-        var orders = await _unitOfWork.Orders.GetAllAsync();
+        // DB-level filtering by status and userId; date range filtered in-memory below
+        var orders = await _unitOfWork.Orders.GetAllOrdersWithDetailsAsync(request.Status, request.UserId);
 
-        // Apply status filter if provided
-        if (request.Status.HasValue)
-        {
-            orders = orders.Where(o => o.Status == request.Status.Value).ToList();
-        }
-
-        // Apply user ID filter if provided
-        if (!string.IsNullOrEmpty(request.UserId))
-        {
-            orders = orders.Where(o => o.UserId == request.UserId).ToList();
-        }
-
-        // Apply date range filter if provided
         if (request.FromDate.HasValue)
-        {
-            orders = orders.Where(o => o.CreatedAt >= request.FromDate.Value).ToList();
-        }
+            orders = orders.Where(o => o.CreatedAt >= request.FromDate.Value);
 
         if (request.ToDate.HasValue)
         {
-            // Add one day to include the entire ToDate
             var toDateEnd = request.ToDate.Value.AddDays(1);
-            orders = orders.Where(o => o.CreatedAt < toDateEnd).ToList();
+            orders = orders.Where(o => o.CreatedAt < toDateEnd);
         }
 
-        // Map to DTOs and order by CreatedAt descending
         return orders
-            .Select(order => OrderDto.FromEntity(order))
+            .Select(OrderDto.FromEntity)
             .OrderByDescending(o => o.CreatedAt)
             .ToList();
     }

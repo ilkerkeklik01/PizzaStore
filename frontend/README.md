@@ -41,6 +41,9 @@ PizzaStore Frontend is a React SPA that targets the [PizzaStore Backend API](../
 - ✅ **Cart Integration** — TanStack Query `['cart']` cache invalidated on every mutation; badge stays in sync across drawer and pizza cards
 - ✅ **Checkout Page** — Order review with item list and totals; `POST /api/order/checkout`; success confirmation with order ID and "Track Order" link
 - ✅ **Order History Page** — Full list of past orders sorted by date; colour-coded status badges; clickable rows navigate to order detail
+  - **Server-side filtering** — Status dropdown (all statuses + all 6 order states), From/To date range pickers with clear labels
+  - **Immediate filtering** — Filters apply instantly without needing an "Apply" button; dynamic empty state messaging for active filters
+  - **Server-side pagination** — Page indicator (X of Y), prev/next buttons; result count shows "Showing X–Y of Z orders"; max 100 orders per page
 - ✅ **Order Detail Page** — Full order breakdown with progress timeline, item/topping snapshot, timestamps, and "Cancel Order" with confirmation modal
 - ✅ **Profile Page** — Protected page at `/profile`; displays user identity (name, email, user ID, roles) with fresh data from `GET /api/auth/me`; navbar dropdown "Profile" link navigates here
 - ✅ **Admin Page** — Protected placeholder (admin role required)

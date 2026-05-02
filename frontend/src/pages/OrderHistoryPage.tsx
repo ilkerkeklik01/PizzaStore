@@ -1,11 +1,13 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
-import { ArrowRight, ClipboardList } from 'lucide-react'
+import { ArrowRight, ClipboardList, ChevronLeft, ChevronRight } from 'lucide-react'
 import { getMyOrders } from '@/api/order.api'
 import { useAuth } from '@/hooks/useAuth'
 import Navbar from '@/components/Navbar'
 import type { Order, OrderStatus } from '@/types/order'
+
+// ─── Status metadata ──────────────────────────────────────────────────────────
 
 const STATUS_COLORS: Record<OrderStatus, { bg: string; text: string; dot: string }> = {
   Pending:        { bg: 'rgba(212, 164, 76, 0.12)',  text: '#D4A44C', dot: '#D4A44C' },
@@ -24,6 +26,53 @@ const STATUS_LABEL: Record<OrderStatus, string> = {
   Delivered:      'Delivered',
   Cancelled:      'Cancelled',
 }
+
+// ─── Filter state ─────────────────────────────────────────────────────────────
+
+interface FilterState {
+  status: OrderStatus | ''
+  fromDate: string
+  toDate: string
+  page: number
+  pageSize: number
+}
+
+const DEFAULT_FILTERS: FilterState = {
+  status: '',
+  fromDate: '',
+  toDate: '',
+  page: 1,
+  pageSize: 10,
+}
+
+// ─── Shared styles ────────────────────────────────────────────────────────────
+
+const inputStyle: React.CSSProperties = {
+  background: '#252320',
+  color: '#F5ECD7',
+  border: '1px solid rgba(245, 236, 215, 0.12)',
+  borderRadius: '8px',
+  padding: '8px 12px',
+  fontSize: '13px',
+  fontFamily: '"DM Sans", sans-serif',
+  outline: 'none',
+  cursor: 'pointer',
+  colorScheme: 'dark',
+  width: '100%',
+}
+
+const labelStyle: React.CSSProperties = {
+  fontSize: '10px',
+  fontWeight: 600,
+  letterSpacing: '0.1em',
+  textTransform: 'uppercase',
+  color: '#8B7E72',
+  fontFamily: '"DM Sans", sans-serif',
+  marginBottom: '5px',
+  display: 'block',
+}
+
+// ─── Sub-components ───────────────────────────────────────────────────────────
 
 function StatusBadge({ status }: { status: OrderStatus }) {
   const s = STATUS_COLORS[status] ?? STATUS_COLORS.Pending
@@ -154,20 +203,45 @@ function OrderRow({ order }: { order: Order }) {
   )
 }
 
+// ─── Page ─────────────────────────────────────────────────────────────────────
+
 export default function OrderHistoryPage() {
   const navigate = useNavigate()
   const { isAuthenticated } = useAuth()
   const [cartOpen, setCartOpen] = useState(false)
+  const [filters, setFilters] = useState<FilterState>(DEFAULT_FILTERS)
 
-  const { data: orders = [], isLoading } = useQuery({
-    queryKey: ['orders'],
-    queryFn: getMyOrders,
+  const hasActiveFilters = !!(filters.status || filters.fromDate || filters.toDate)
+
+  const { data, isLoading, isFetching } = useQuery({
+    queryKey: ['orders', filters],
+    queryFn: () =>
+      getMyOrders({
+        status: filters.status || undefined,
+        fromDate: filters.fromDate || undefined,
+        toDate: filters.toDate || undefined,
+        page: filters.page,
+        pageSize: filters.pageSize,
+      }),
     enabled: isAuthenticated,
   })
 
-  const sorted = [...orders].sort(
-    (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
-  )
+  const orders = data?.items ?? []
+  const totalCount = data?.totalCount ?? 0
+  const totalPages = data?.totalPages ?? 1
+  const rangeStart = totalCount === 0 ? 0 : (filters.page - 1) * filters.pageSize + 1
+  const rangeEnd = Math.min(filters.page * filters.pageSize, totalCount)
+
+  // Changing status or dates resets to page 1
+  const updateFilter = (update: Partial<Omit<FilterState, 'page' | 'pageSize'>>) => {
+    setFilters((prev) => ({ ...prev, ...update, page: 1 }))
+  }
+
+  const handleReset = () => setFilters(DEFAULT_FILTERS)
+
+  const handlePageChange = (page: number) => {
+    setFilters((prev) => ({ ...prev, page }))
+  }
 
   return (
     <div style={{ minHeight: '100vh', background: '#1C1A17' }}>
@@ -181,7 +255,7 @@ export default function OrderHistoryPage() {
         }}
       >
         {/* Header */}
-        <div style={{ marginBottom: '48px' }}>
+        <div style={{ marginBottom: '32px' }}>
           <p
             style={{
               fontSize: '11px',
@@ -206,13 +280,106 @@ export default function OrderHistoryPage() {
           >
             Order History
           </h1>
-          {!isLoading && orders.length > 0 && (
+          {!isLoading && totalCount > 0 && (
             <p style={{ fontSize: '14px', color: '#8B7E72', margin: 0 }}>
-              {orders.length} order{orders.length !== 1 ? 's' : ''} placed
+              {totalCount} order{totalCount !== 1 ? 's' : ''} placed
             </p>
           )}
         </div>
 
+        {/* Filter bar */}
+        <div
+          style={{
+            background: '#1E1C19',
+            border: '1px solid rgba(245, 236, 215, 0.07)',
+            borderRadius: '12px',
+            padding: '20px 22px',
+            marginBottom: '28px',
+          }}
+        >
+          <div
+            style={{
+              display: 'flex',
+              alignItems: 'flex-end',
+              flexWrap: 'wrap',
+              gap: '12px',
+            }}
+          >
+            {/* Status */}
+            <div style={{ display: 'flex', flexDirection: 'column', minWidth: '150px' }}>
+              <label style={labelStyle}>Status</label>
+              <select
+                value={filters.status}
+                onChange={(e) => updateFilter({ status: e.target.value as OrderStatus | '' })}
+                style={inputStyle}
+              >
+                <option value="">All Statuses</option>
+                <option value="Pending">Pending</option>
+                <option value="Confirmed">Confirmed</option>
+                <option value="Preparing">Preparing</option>
+                <option value="OutForDelivery">Out for Delivery</option>
+                <option value="Delivered">Delivered</option>
+                <option value="Cancelled">Cancelled</option>
+              </select>
+            </div>
+
+            {/* From date */}
+            <div style={{ display: 'flex', flexDirection: 'column', minWidth: '148px' }}>
+              <label style={labelStyle}>From date</label>
+              <input
+                type="date"
+                value={filters.fromDate}
+                onChange={(e) => updateFilter({ fromDate: e.target.value })}
+                style={inputStyle}
+              />
+            </div>
+
+            {/* To date */}
+            <div style={{ display: 'flex', flexDirection: 'column', minWidth: '148px' }}>
+              <label style={labelStyle}>To date</label>
+              <input
+                type="date"
+                value={filters.toDate}
+                onChange={(e) => updateFilter({ toDate: e.target.value })}
+                style={inputStyle}
+              />
+            </div>
+
+            {/* Clear filters — only when something is active */}
+            {hasActiveFilters && (
+              <button
+                onClick={handleReset}
+                style={{
+                  background: 'none',
+                  border: '1px solid rgba(245, 236, 215, 0.12)',
+                  borderRadius: '8px',
+                  color: '#8B7E72',
+                  fontSize: '13px',
+                  fontFamily: '"DM Sans", sans-serif',
+                  padding: '8px 14px',
+                  cursor: 'pointer',
+                  alignSelf: 'flex-end',
+                  transition: 'color 0.2s, border-color 0.2s',
+                  whiteSpace: 'nowrap',
+                }}
+                onMouseEnter={(e) => {
+                  const el = e.currentTarget as HTMLElement
+                  el.style.color = '#F5ECD7'
+                  el.style.borderColor = 'rgba(245, 236, 215, 0.3)'
+                }}
+                onMouseLeave={(e) => {
+                  const el = e.currentTarget as HTMLElement
+                  el.style.color = '#8B7E72'
+                  el.style.borderColor = 'rgba(245, 236, 215, 0.12)'
+                }}
+              >
+                Clear filters
+              </button>
+            )}
+          </div>
+        </div>
+
+        {/* Content */}
         {isLoading ? (
           <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '16px', padding: '60px 0' }}>
             <div
@@ -229,53 +396,183 @@ export default function OrderHistoryPage() {
               Loading orders…
             </span>
           </div>
-        ) : sorted.length === 0 ? (
-          <div style={{ textAlign: 'center', padding: '80px 0' }}>
+        ) : orders.length === 0 ? (
+          hasActiveFilters ? (
+            /* Filtered empty state */
+            <div style={{ textAlign: 'center', padding: '80px 0' }}>
+              <div
+                style={{
+                  width: '64px',
+                  height: '64px',
+                  borderRadius: '50%',
+                  background: 'rgba(245, 236, 215, 0.04)',
+                  border: '1px solid rgba(245, 236, 215, 0.1)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  margin: '0 auto 24px',
+                }}
+              >
+                <ClipboardList size={28} color="#8B7E72" />
+              </div>
+              <p style={{ fontSize: '16px', color: '#F5ECD7', marginBottom: '8px' }}>
+                No orders match your filters
+              </p>
+              <p style={{ fontSize: '13px', color: '#8B7E72', marginBottom: '28px' }}>
+                Try adjusting or clearing the filters above.
+              </p>
+              <button
+                onClick={handleReset}
+                style={{
+                  background: '#C44536',
+                  color: '#F5ECD7',
+                  border: 'none',
+                  borderRadius: '32px',
+                  padding: '12px 28px',
+                  fontSize: '14px',
+                  cursor: 'pointer',
+                  fontWeight: 500,
+                  letterSpacing: '0.04em',
+                  transition: 'background 0.2s',
+                }}
+                onMouseEnter={(e) => ((e.currentTarget as HTMLElement).style.background = '#A8352A')}
+                onMouseLeave={(e) => ((e.currentTarget as HTMLElement).style.background = '#C44536')}
+              >
+                Clear Filters
+              </button>
+            </div>
+          ) : (
+            /* No orders at all */
+            <div style={{ textAlign: 'center', padding: '80px 0' }}>
+              <div
+                style={{
+                  width: '64px',
+                  height: '64px',
+                  borderRadius: '50%',
+                  background: 'rgba(245, 236, 215, 0.04)',
+                  border: '1px solid rgba(245, 236, 215, 0.1)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  margin: '0 auto 24px',
+                }}
+              >
+                <ClipboardList size={28} color="#8B7E72" />
+              </div>
+              <p style={{ fontSize: '16px', color: '#F5ECD7', marginBottom: '8px' }}>No orders yet</p>
+              <p style={{ fontSize: '13px', color: '#8B7E72', marginBottom: '28px' }}>
+                Your order history will appear here.
+              </p>
+              <button
+                onClick={() => navigate('/')}
+                style={{
+                  background: '#C44536',
+                  color: '#F5ECD7',
+                  border: 'none',
+                  borderRadius: '32px',
+                  padding: '12px 28px',
+                  fontSize: '14px',
+                  cursor: 'pointer',
+                  fontWeight: 500,
+                  letterSpacing: '0.04em',
+                  transition: 'background 0.2s',
+                }}
+                onMouseEnter={(e) => ((e.currentTarget as HTMLElement).style.background = '#A8352A')}
+                onMouseLeave={(e) => ((e.currentTarget as HTMLElement).style.background = '#C44536')}
+              >
+                Order Now
+              </button>
+            </div>
+          )
+        ) : (
+          <>
+            {/* Order list — subtle dim while re-fetching */}
             <div
               style={{
-                width: '64px',
-                height: '64px',
-                borderRadius: '50%',
-                background: 'rgba(245, 236, 215, 0.04)',
-                border: '1px solid rgba(245, 236, 215, 0.1)',
                 display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                margin: '0 auto 24px',
+                flexDirection: 'column',
+                gap: '12px',
+                opacity: isFetching && !isLoading ? 0.55 : 1,
+                transition: 'opacity 0.15s',
               }}
             >
-              <ClipboardList size={28} color="#8B7E72" />
+              {orders.map((order) => (
+                <OrderRow key={order.id} order={order} />
+              ))}
             </div>
-            <p style={{ fontSize: '16px', color: '#F5ECD7', marginBottom: '8px' }}>No orders yet</p>
-            <p style={{ fontSize: '13px', color: '#8B7E72', marginBottom: '28px' }}>
-              Your order history will appear here.
-            </p>
-            <button
-              onClick={() => navigate('/')}
+
+            {/* Pagination — always shown when there are results */}
+            <div
               style={{
-                background: '#C44536',
-                color: '#F5ECD7',
-                border: 'none',
-                borderRadius: '32px',
-                padding: '12px 28px',
-                fontSize: '14px',
-                cursor: 'pointer',
-                fontWeight: 500,
-                letterSpacing: '0.04em',
-                transition: 'background 0.2s',
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+                marginTop: '24px',
+                padding: '16px 0',
+                borderTop: '1px solid rgba(245, 236, 215, 0.07)',
+                flexWrap: 'wrap',
+                gap: '12px',
               }}
-              onMouseEnter={(e) => ((e.currentTarget as HTMLElement).style.background = '#A8352A')}
-              onMouseLeave={(e) => ((e.currentTarget as HTMLElement).style.background = '#C44536')}
             >
-              Order Now
-            </button>
-          </div>
-        ) : (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-            {sorted.map((order) => (
-              <OrderRow key={order.id} order={order} />
-            ))}
-          </div>
+              {/* Result range */}
+              <span style={{ fontSize: '12px', color: '#8B7E72', fontFamily: '"DM Sans", sans-serif' }}>
+                Showing {rangeStart}–{rangeEnd} of {totalCount} order{totalCount !== 1 ? 's' : ''}
+              </span>
+
+              {/* Page controls */}
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <button
+                  onClick={() => handlePageChange(filters.page - 1)}
+                  disabled={filters.page === 1}
+                  style={{
+                    background: 'transparent',
+                    border: `1px solid ${filters.page === 1 ? 'rgba(245,236,215,0.1)' : '#C44536'}`,
+                    borderRadius: '8px',
+                    padding: '7px',
+                    cursor: filters.page === 1 ? 'default' : 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    opacity: filters.page === 1 ? 0.35 : 1,
+                    transition: 'opacity 0.2s, border-color 0.2s',
+                  }}
+                >
+                  <ChevronLeft size={15} color={filters.page === 1 ? '#8B7E72' : '#C44536'} />
+                </button>
+
+                <span
+                  style={{
+                    fontSize: '13px',
+                    color: '#8B7E72',
+                    minWidth: '100px',
+                    textAlign: 'center',
+                    fontFamily: '"DM Sans", sans-serif',
+                  }}
+                >
+                  Page {filters.page} of {totalPages}
+                </span>
+
+                <button
+                  onClick={() => handlePageChange(filters.page + 1)}
+                  disabled={filters.page >= totalPages}
+                  style={{
+                    background: 'transparent',
+                    border: `1px solid ${filters.page >= totalPages ? 'rgba(245,236,215,0.1)' : '#C44536'}`,
+                    borderRadius: '8px',
+                    padding: '7px',
+                    cursor: filters.page >= totalPages ? 'default' : 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    opacity: filters.page >= totalPages ? 0.35 : 1,
+                    transition: 'opacity 0.2s, border-color 0.2s',
+                  }}
+                >
+                  <ChevronRight size={15} color={filters.page >= totalPages ? '#8B7E72' : '#C44536'} />
+                </button>
+              </div>
+            </div>
+          </>
         )}
       </div>
     </div>

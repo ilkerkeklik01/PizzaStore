@@ -5,6 +5,42 @@ All notable changes to the PizzaStore project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.6.0] - 2026-05-01
+
+### ✨ Added
+
+#### `PagedResult<T>` — shared pagination envelope (`src/PizzaStore.Application/Common/Models/PagedResult.cs` — new)
+- Generic record wrapping `Items`, `TotalCount`, `Page`, `PageSize`, and `TotalPages`
+- Used as the return type for `GET /api/order` to support server-side pagination
+
+#### `GetFilteredOrdersByUserIdAsync` — new repository method
+- Added to `IOrderRepository` (`src/PizzaStore.Domain/Interfaces/IOrderRepository.cs`)
+- Implemented in `OrderRepository` (`src/PizzaStore.Infrastructure.Persistence/Repositories/OrderRepository.cs`)
+- Builds EF Core queryable with conditional `Where` clauses (status, fromDate, toDate, userId scoped at query level), then executes **two SQL queries**: `CountAsync()` for the total and `.Skip().Take()` for the page — nothing beyond the requested page is loaded into memory
+- `DateTime` parameters are normalised to `DateTimeKind.Utc` before comparison to prevent timezone-unaware matches against UTC-stored `CreatedAt` values
+- `toDate` uses an exclusive upper bound (`toDate + 1 day`) so the full calendar day is included
+
+### 🔧 Changed
+
+#### `GET /api/order` — filter + pagination query params added
+- `GetMyOrdersQuery` (`src/PizzaStore.Application/Features/Order/Queries/GetMyOrders/GetMyOrdersQuery.cs`) now accepts `Status?`, `FromDate?`, `ToDate?`, `Page` (default 1), `PageSize` (default 10)
+- `GetMyOrdersQueryHandler` returns `PagedResult<OrderDto>` instead of `List<OrderDto>`, delegating to the new `GetFilteredOrdersByUserIdAsync` repository method
+- `OrderController.GetMyOrders` exposes all five params as `[FromQuery]`; `page` and `pageSize` are clamped (`Math.Max(1, page)` / `Math.Clamp(pageSize, 1, 100)`) before being forwarded to the query
+
+### 🐛 Fixed
+
+#### `GET /api/admin/orders` — order items were always empty
+- `GetAllOrdersQueryHandler` was calling `GetAllAsync()` (base repository method — no `Include`s), causing every `OrderDto` returned by the admin endpoint to have `items: []`
+- Fixed by switching to `GetAllOrdersWithDetailsAsync(status, userId)` which issues a properly joined query with `Include(o.OrderItems).ThenInclude(oi.OrderItemToppings)`
+- Status and `userId` filtering is now pushed to the database; date range filtering remains in-memory (same as before, unchanged behaviour)
+
+### ✅ Verification
+
+- ✅ **Build:** 0 errors
+- ✅ **Tests:** 191/191 passing (4 new handler tests added for `GetMyOrdersQueryHandler`; 5 admin handler tests updated to mock `GetAllOrdersWithDetailsAsync` instead of `GetAllAsync`)
+
+---
+
 ## [3.5.0] - 2026-03-30
 
 ### ✨ Added
