@@ -1,13 +1,21 @@
 import { apiClient } from './client'
-import type { Order } from '@/types/order'
+import type { Order, OrderStatus, PagedResult } from '@/types/order'
+
+export interface OrderFilterParams {
+  status?: OrderStatus
+  fromDate?: string
+  toDate?: string
+  page?: number
+  pageSize?: number
+}
 
 export const checkoutCart = async (): Promise<Order> => {
   const { data } = await apiClient.post<Order>('/order/checkout')
   return data
 }
 
-export const getMyOrders = async (): Promise<Order[]> => {
-  const { data } = await apiClient.get<Order[]>('/order')
+export const getMyOrders = async (params?: OrderFilterParams): Promise<PagedResult<Order>> => {
+  const { data } = await apiClient.get<PagedResult<Order>>('/order', { params })
   return data
 }
 
