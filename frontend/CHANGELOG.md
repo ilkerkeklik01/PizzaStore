@@ -5,6 +5,71 @@ All notable changes to the PizzaStore Frontend will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.7.0] - 2026-05-02
+
+### ✨ Added
+
+#### Full Admin Dashboard (`src/pages/AdminPage.tsx` — full rewrite)
+
+- Replaced "Admin panel coming soon" placeholder with a complete, production-ready tabbed dashboard.
+
+**Tab switcher**
+- Terracotta pill buttons: **Users** and **Orders**, matching the pizza-type filter pill pattern from `HomePage.tsx`.
+
+**Users tab**
+- Client-side searchable table (Username / Email / Phone / Roles columns) built with CSS Grid — no HTML `<table>`
+- Live search filters by username or email across the already-fetched list
+- Row count shown below the table (`X of Y users matching search`)
+- Click any row → **User Detail Drawer** slides in from the right
+
+**User Detail Drawer** (`CartDrawer` shell pattern)
+- Displays: username (Bodoni Moda italic heading), email, phone, roles as terracotta pill badges, full user ID (monospace)
+- Fetches the selected user's order history on open (`GET /api/admin/users/{id}/orders`)
+- Compact order rows: status badge, date, short order ID (`#XXXXXXXX`), total price
+
+**Orders tab**
+- Filter bar (identical card style to `OrderHistoryPage`): Status, User ID (text), From Date, To Date, "Clear filters" button (conditional)
+- Server-side pagination with Prev / Next chevrons and "Showing X–Y of Z orders" range label
+- CSS Grid table: Order ID / User / Date / Total / Status columns
+- **Inline status update** — each row has a status `<select>` that fires `PUT /api/admin/orders/{id}/status`
+  - Optimistic cache update via `queryClient.setQueryData` on success
+  - Loading spinner replaces the dropdown while the mutation is in-flight for that specific row
+  - `Delivered` and `Cancelled` orders have the dropdown **disabled** (`opacity: 0.5; cursor: not-allowed`) — backend enforces this as a terminal state
+- Background re-fetch dim (same `opacity: 0.55` pattern as `OrderHistoryPage`)
+
+**Toast notifications** (new minimal component, inline in file)
+- `position: fixed; bottom: 24px; right: 24px; zIndex: 400`
+- `success` (green dot/border) and `error` (terracotta dot/border) variants
+- Auto-dismisses after 3.5 s; manual dismiss via ✕ button
+- Slide-up entrance animation (`slideUp` keyframe)
+- Fired for status update success and error
+
+#### New API Module (`src/api/admin.api.ts` — new file)
+- `getAllUsers()` — `GET /api/admin/users` → `AdminUser[]`
+- `getUserById(id)` — `GET /api/admin/users/{id}` → `AdminUser`
+- `getOrdersByUserId(id)` — `GET /api/admin/users/{id}/orders` → `Order[]`
+- `getAllOrders(params?)` — `GET /api/admin/orders` → `PagedResult<Order>` (now paginated)
+- `updateOrderStatus(orderId, newStatus)` — `PUT /api/admin/orders/{id}/status` → `Order`
+- Exports `AdminOrderFilterParams` interface
+
+#### New TypeScript Type (`src/types/admin.ts` — new file)
+- `AdminUser` interface: `id`, `userName`, `email`, `phoneNumber`, `roles: string[]`
+
+### 🔧 Changed
+
+- **`src/pages/AdminPage.tsx`** — Completely replaced Tailwind stub with inline-style Napoletana implementation (all other pages use inline styles; the stub was the only outlier)
+- **`src/App.tsx`** — No route change required; `/admin → <AdminPage />` inside `<ProtectedRoute requireAdmin />` was already in place
+
+### 🔒 Backend: `GET /api/admin/orders` — Server-Side Pagination Added
+
+The admin orders endpoint was previously unpaginated (returned `List<OrderDto>`). It now returns `PagedResult<OrderDto>` with the same shape used by `GET /api/order`. See backend CHANGELOG for details.
+
+### ✅ Verification
+
+- ✅ **Build:** TypeScript compilation clean (0 errors, `tsc --noEmit`)
+
+---
+
 ## [0.6.0] - 2026-05-02
 
 ### ✨ Added

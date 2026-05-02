@@ -1,5 +1,6 @@
 using MediatR;
 using Microsoft.AspNetCore.Mvc;
+using PizzaStore.Application.Common.Models;
 using PizzaStore.Application.Features.Admin.Commands.UpdateOrderStatus;
 using PizzaStore.Application.Features.Admin.Queries;
 using PizzaStore.Application.Features.Admin.Queries.GetAllUsers;
@@ -85,27 +86,33 @@ public class AdminController : ControllerBase
     }
 
     /// <summary>
-    /// Get all orders with optional filters (Admin only)
+    /// Get all orders with optional filters and pagination (Admin only)
     /// </summary>
     /// <param name="status">Filter by order status (Pending, Confirmed, Preparing, OutForDelivery, Delivered, Cancelled)</param>
     /// <param name="userId">Filter by user ID</param>
     /// <param name="fromDate">Filter orders from this date (inclusive)</param>
     /// <param name="toDate">Filter orders up to this date (inclusive)</param>
-    /// <returns>List of orders matching the filter criteria</returns>
-    /// <response code="200">Returns the filtered list of orders</response>
+    /// <param name="page">Page number (1-based, default 1)</param>
+    /// <param name="pageSize">Number of items per page (default 10)</param>
+    /// <returns>Paginated list of orders matching the filter criteria</returns>
+    /// <response code="200">Returns the paginated filtered list of orders</response>
     /// <response code="401">If the user is not authenticated</response>
     /// <response code="403">If the user is not an admin</response>
     [HttpGet("orders")]
-    [ProducesResponseType(typeof(List<OrderDto>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(PagedResult<OrderDto>), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(StatusCodes.Status403Forbidden)]
     public async Task<IActionResult> GetAllOrders(
         [FromQuery] OrderStatus? status = null,
         [FromQuery] string? userId = null,
         [FromQuery] DateTime? fromDate = null,
-        [FromQuery] DateTime? toDate = null)
+        [FromQuery] DateTime? toDate = null,
+        [FromQuery] int page = 1,
+        [FromQuery] int pageSize = 10)
     {
-        var query = new GetAllOrdersQuery(status, userId, fromDate, toDate);
+        page = Math.Max(1, page);
+        pageSize = Math.Clamp(pageSize, 1, 100);
+        var query = new GetAllOrdersQuery(status, userId, fromDate, toDate, page, pageSize);
         var result = await _mediator.Send(query);
         return Ok(result);
     }

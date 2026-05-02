@@ -24,39 +24,34 @@ public class GetAllOrdersQueryHandlerTests
         _handler = new GetAllOrdersQueryHandler(_unitOfWorkMock.Object);
     }
 
+    private void SetupPagedRepo(IEnumerable<DomainOrder> orders, int totalCount,
+        OrderStatus? status = null, string? userId = null,
+        DateTime? fromDate = null, DateTime? toDate = null,
+        int page = 1, int pageSize = 10)
+    {
+        _orderRepositoryMock
+            .Setup(x => x.GetAllOrdersPagedAsync(status, userId, fromDate, toDate, page, pageSize))
+            .ReturnsAsync((orders, totalCount));
+    }
+
     [Fact]
-    public async Task Handle_WhenNoFiltersProvided_ReturnsAllOrdersOrderedByCreatedAtDescending()
+    public async Task Handle_WhenNoFiltersProvided_ReturnsPagedResultWithAllOrders()
     {
         // Arrange
-        var order1 = TestDataBuilder.Order()
-            .WithId("order-1")
-            .WithUserId("user-1")
-            .WithTotalPrice(25.99m)
-            .WithStatus(OrderStatus.Pending)
-            .WithCreatedAt(DateTime.UtcNow.AddDays(-2))
-            .Build();
+        var order1 = TestDataBuilder.Order().WithId("order-1").WithUserId("user-1")
+            .WithTotalPrice(25.99m).WithStatus(OrderStatus.Pending)
+            .WithCreatedAt(DateTime.UtcNow.AddDays(-2)).Build();
 
-        var order2 = TestDataBuilder.Order()
-            .WithId("order-2")
-            .WithUserId("user-2")
-            .WithTotalPrice(45.50m)
-            .WithStatus(OrderStatus.Confirmed)
-            .WithCreatedAt(DateTime.UtcNow.AddDays(-1))
-            .Build();
+        var order2 = TestDataBuilder.Order().WithId("order-2").WithUserId("user-2")
+            .WithTotalPrice(45.50m).WithStatus(OrderStatus.Confirmed)
+            .WithCreatedAt(DateTime.UtcNow.AddDays(-1)).Build();
 
-        var order3 = TestDataBuilder.Order()
-            .WithId("order-3")
-            .WithUserId("user-3")
-            .WithTotalPrice(35.75m)
-            .WithStatus(OrderStatus.Delivered)
-            .WithCreatedAt(DateTime.UtcNow)
-            .Build();
+        var order3 = TestDataBuilder.Order().WithId("order-3").WithUserId("user-3")
+            .WithTotalPrice(35.75m).WithStatus(OrderStatus.Delivered)
+            .WithCreatedAt(DateTime.UtcNow).Build();
 
-        var orders = new List<DomainOrder> { order1, order2, order3 };
-
-        _orderRepositoryMock
-            .Setup(x => x.GetAllOrdersWithDetailsAsync(null, null))
-            .ReturnsAsync(orders);
+        var orders = new List<DomainOrder> { order3, order2, order1 }; // repo returns desc order
+        SetupPagedRepo(orders, 3);
 
         var query = new GetAllOrdersQuery();
 
@@ -65,31 +60,23 @@ public class GetAllOrdersQueryHandlerTests
 
         // Assert
         result.Should().NotBeNull();
-        result.Should().HaveCount(3);
-        result[0].Id.Should().Be("order-3"); // Most recent first
-        result[1].Id.Should().Be("order-2");
-        result[2].Id.Should().Be("order-1");
+        result.Items.Should().HaveCount(3);
+        result.TotalCount.Should().Be(3);
+        result.Page.Should().Be(1);
+        result.PageSize.Should().Be(10);
+        result.TotalPages.Should().Be(1);
 
-        _orderRepositoryMock.Verify(x => x.GetAllOrdersWithDetailsAsync(null, null), Times.Once);
+        _orderRepositoryMock.Verify(x => x.GetAllOrdersPagedAsync(null, null, null, null, 1, 10), Times.Once);
     }
 
     [Fact]
     public async Task Handle_WhenFilteredByStatus_ReturnsOnlyOrdersWithMatchingStatus()
     {
-        // Arrange — DB returns only the matching-status orders (filtered at repo level)
-        var order1 = TestDataBuilder.Order()
-            .WithId("order-1")
-            .WithStatus(OrderStatus.Pending)
-            .Build();
+        // Arrange
+        var order1 = TestDataBuilder.Order().WithId("order-1").WithStatus(OrderStatus.Pending).Build();
+        var order3 = TestDataBuilder.Order().WithId("order-3").WithStatus(OrderStatus.Pending).Build();
 
-        var order3 = TestDataBuilder.Order()
-            .WithId("order-3")
-            .WithStatus(OrderStatus.Pending)
-            .Build();
-
-        _orderRepositoryMock
-            .Setup(x => x.GetAllOrdersWithDetailsAsync(OrderStatus.Pending, null))
-            .ReturnsAsync(new List<DomainOrder> { order1, order3 });
+        SetupPagedRepo(new List<DomainOrder> { order3, order1 }, 2, status: OrderStatus.Pending);
 
         var query = new GetAllOrdersQuery(Status: OrderStatus.Pending);
 
@@ -97,29 +84,20 @@ public class GetAllOrdersQueryHandlerTests
         var result = await _handler.Handle(query, CancellationToken.None);
 
         // Assert
-        result.Should().NotBeNull();
-        result.Should().HaveCount(2);
-        result.Should().OnlyContain(o => o.Status == OrderStatus.Pending);
+        result.TotalCount.Should().Be(2);
+        result.Items.Should().HaveCount(2);
+        result.Items.Should().OnlyContain(o => o.Status == OrderStatus.Pending);
     }
 
     [Fact]
     public async Task Handle_WhenFilteredByUserId_ReturnsOnlyOrdersForSpecificUser()
     {
-        // Arrange — DB returns only the matching-userId orders (filtered at repo level)
+        // Arrange
         var userId = "user-123";
-        var order1 = TestDataBuilder.Order()
-            .WithId("order-1")
-            .WithUserId(userId)
-            .Build();
+        var order1 = TestDataBuilder.Order().WithId("order-1").WithUserId(userId).Build();
+        var order3 = TestDataBuilder.Order().WithId("order-3").WithUserId(userId).Build();
 
-        var order3 = TestDataBuilder.Order()
-            .WithId("order-3")
-            .WithUserId(userId)
-            .Build();
-
-        _orderRepositoryMock
-            .Setup(x => x.GetAllOrdersWithDetailsAsync(null, userId))
-            .ReturnsAsync(new List<DomainOrder> { order1, order3 });
+        SetupPagedRepo(new List<DomainOrder> { order3, order1 }, 2, userId: userId);
 
         var query = new GetAllOrdersQuery(UserId: userId);
 
@@ -127,43 +105,22 @@ public class GetAllOrdersQueryHandlerTests
         var result = await _handler.Handle(query, CancellationToken.None);
 
         // Assert
-        result.Should().NotBeNull();
-        result.Should().HaveCount(2);
-        result.Should().OnlyContain(o => o.UserId == userId);
+        result.TotalCount.Should().Be(2);
+        result.Items.Should().HaveCount(2);
+        result.Items.Should().OnlyContain(o => o.UserId == userId);
     }
 
     [Fact]
-    public async Task Handle_WhenFilteredByDateRange_ReturnsOnlyOrdersWithinRange()
+    public async Task Handle_WhenFilteredByDateRange_ForwardsDateParamsToRepository()
     {
-        // Arrange — date filtering is in-memory; DB returns all orders
+        // Arrange
         var fromDate = new DateTime(2024, 1, 10);
         var toDate = new DateTime(2024, 1, 20);
 
-        var order1 = TestDataBuilder.Order()
-            .WithId("order-1")
-            .WithCreatedAt(new DateTime(2024, 1, 5))   // Before range
-            .Build();
+        var order = TestDataBuilder.Order().WithId("order-2")
+            .WithCreatedAt(new DateTime(2024, 1, 15)).Build();
 
-        var order2 = TestDataBuilder.Order()
-            .WithId("order-2")
-            .WithCreatedAt(new DateTime(2024, 1, 15))  // Within range
-            .Build();
-
-        var order3 = TestDataBuilder.Order()
-            .WithId("order-3")
-            .WithCreatedAt(new DateTime(2024, 1, 20, 12, 0, 0)) // On toDate (inclusive)
-            .Build();
-
-        var order4 = TestDataBuilder.Order()
-            .WithId("order-4")
-            .WithCreatedAt(new DateTime(2024, 1, 25))  // After range
-            .Build();
-
-        var orders = new List<DomainOrder> { order1, order2, order3, order4 };
-
-        _orderRepositoryMock
-            .Setup(x => x.GetAllOrdersWithDetailsAsync(null, null))
-            .ReturnsAsync(orders);
+        SetupPagedRepo(new List<DomainOrder> { order }, 1, fromDate: fromDate, toDate: toDate);
 
         var query = new GetAllOrdersQuery(FromDate: fromDate, ToDate: toDate);
 
@@ -171,30 +128,26 @@ public class GetAllOrdersQueryHandlerTests
         var result = await _handler.Handle(query, CancellationToken.None);
 
         // Assert
-        result.Should().NotBeNull();
-        result.Should().HaveCount(2);
-        result.Should().Contain(o => o.Id == "order-2");
-        result.Should().Contain(o => o.Id == "order-3");
+        result.TotalCount.Should().Be(1);
+        result.Items.Should().HaveCount(1);
+        result.Items[0].Id.Should().Be("order-2");
+
+        _orderRepositoryMock.Verify(x => x.GetAllOrdersPagedAsync(null, null, fromDate, toDate, 1, 10), Times.Once);
     }
 
     [Fact]
-    public async Task Handle_WhenMultipleFiltersApplied_ReturnsOrdersMatchingAllFilters()
+    public async Task Handle_WhenMultipleFiltersApplied_ForwardsAllParamsToRepository()
     {
-        // Arrange — DB filters by status + userId; date range filtered in-memory
+        // Arrange
         var userId = "user-123";
         var status = OrderStatus.Confirmed;
         var fromDate = new DateTime(2024, 1, 10);
 
-        var order1 = TestDataBuilder.Order()
-            .WithId("order-1")
-            .WithUserId(userId)
-            .WithStatus(status)
-            .WithCreatedAt(new DateTime(2024, 1, 15))
-            .Build();
+        var order = TestDataBuilder.Order().WithId("order-1")
+            .WithUserId(userId).WithStatus(status)
+            .WithCreatedAt(new DateTime(2024, 1, 15)).Build();
 
-        _orderRepositoryMock
-            .Setup(x => x.GetAllOrdersWithDetailsAsync(status, userId))
-            .ReturnsAsync(new List<DomainOrder> { order1 });
+        SetupPagedRepo(new List<DomainOrder> { order }, 1, status: status, userId: userId, fromDate: fromDate);
 
         var query = new GetAllOrdersQuery(Status: status, UserId: userId, FromDate: fromDate);
 
@@ -202,18 +155,16 @@ public class GetAllOrdersQueryHandlerTests
         var result = await _handler.Handle(query, CancellationToken.None);
 
         // Assert
-        result.Should().NotBeNull();
-        result.Should().HaveCount(1);
-        result[0].Id.Should().Be("order-1");
+        result.TotalCount.Should().Be(1);
+        result.Items.Should().HaveCount(1);
+        result.Items[0].Id.Should().Be("order-1");
     }
 
     [Fact]
-    public async Task Handle_WhenNoOrdersExist_ReturnsEmptyList()
+    public async Task Handle_WhenNoOrdersExist_ReturnsEmptyPagedResult()
     {
         // Arrange
-        _orderRepositoryMock
-            .Setup(x => x.GetAllOrdersWithDetailsAsync(null, null))
-            .ReturnsAsync(new List<DomainOrder>());
+        SetupPagedRepo(new List<DomainOrder>(), 0);
 
         var query = new GetAllOrdersQuery();
 
@@ -222,6 +173,52 @@ public class GetAllOrdersQueryHandlerTests
 
         // Assert
         result.Should().NotBeNull();
-        result.Should().BeEmpty();
+        result.Items.Should().BeEmpty();
+        result.TotalCount.Should().Be(0);
+        result.TotalPages.Should().Be(0);
+    }
+
+    [Fact]
+    public async Task Handle_WithPaginationParams_ForwardsPageAndPageSizeToRepository()
+    {
+        // Arrange
+        var orders = Enumerable.Range(1, 5)
+            .Select(i => TestDataBuilder.Order().WithId($"order-{i}").Build())
+            .ToList();
+
+        SetupPagedRepo(orders, 25, page: 2, pageSize: 5);
+
+        var query = new GetAllOrdersQuery(Page: 2, PageSize: 5);
+
+        // Act
+        var result = await _handler.Handle(query, CancellationToken.None);
+
+        // Assert
+        result.Page.Should().Be(2);
+        result.PageSize.Should().Be(5);
+        result.TotalCount.Should().Be(25);
+        result.TotalPages.Should().Be(5);
+        result.Items.Should().HaveCount(5);
+
+        _orderRepositoryMock.Verify(x => x.GetAllOrdersPagedAsync(null, null, null, null, 2, 5), Times.Once);
+    }
+
+    [Fact]
+    public async Task Handle_TotalPagesCalculation_RoundsUpForPartialPage()
+    {
+        // Arrange
+        var orders = Enumerable.Range(1, 3)
+            .Select(i => TestDataBuilder.Order().WithId($"order-{i}").Build())
+            .ToList();
+
+        SetupPagedRepo(orders, 23, page: 3, pageSize: 10);
+
+        var query = new GetAllOrdersQuery(Page: 3, PageSize: 10);
+
+        // Act
+        var result = await _handler.Handle(query, CancellationToken.None);
+
+        // Assert
+        result.TotalPages.Should().Be(3); // ceil(23/10) = 3
     }
 }

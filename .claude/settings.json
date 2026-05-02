@@ -6,7 +6,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "cd /Users/ilkerkeklik/Desktop/learning-workstation/ai-learning-workstation/dotnet-projects/SemanticKernelDemo/PizzaStore/backend && dotnet build --no-restore -v q 2>&1 | tail -5"
+            "command": "cd /Users/ilkerkeklik/Desktop/Projects/PizzaStore/backend && dotnet build --no-restore -v q 2>&1 | tail -5"
           }
         ]
       }
