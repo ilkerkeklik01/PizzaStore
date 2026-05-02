@@ -22,6 +22,46 @@ public class OrderRepository : Repository<Order>, IOrderRepository
             .ToListAsync();
     }
 
+    public async Task<(IEnumerable<Order> Items, int TotalCount)> GetFilteredOrdersByUserIdAsync(
+        string userId,
+        OrderStatus? status,
+        DateTime? fromDate,
+        DateTime? toDate,
+        int page,
+        int pageSize)
+    {
+        IQueryable<Order> query = _dbSet
+            .AsNoTracking()
+            .Where(o => o.UserId == userId);
+
+        if (status.HasValue)
+            query = query.Where(o => o.Status == status.Value);
+
+        if (fromDate.HasValue)
+        {
+            var from = DateTime.SpecifyKind(fromDate.Value, DateTimeKind.Utc);
+            query = query.Where(o => o.CreatedAt >= from);
+        }
+
+        if (toDate.HasValue)
+        {
+            var toExclusive = DateTime.SpecifyKind(toDate.Value, DateTimeKind.Utc).AddDays(1);
+            query = query.Where(o => o.CreatedAt < toExclusive);
+        }
+
+        var totalCount = await query.CountAsync();
+
+        var items = await query
+            .Include(o => o.OrderItems)
+                .ThenInclude(oi => oi.OrderItemToppings)
+            .OrderByDescending(o => o.CreatedAt)
+            .Skip((page - 1) * pageSize)
+            .Take(pageSize)
+            .ToListAsync();
+
+        return (items, totalCount);
+    }
+
     public async Task<Order?> GetOrderByIdWithDetailsAsync(string orderId)
     {
         return await _dbSet
