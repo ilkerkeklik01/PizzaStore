@@ -31,6 +31,17 @@ public interface IOrderRepository : IRepository<Order>
     Task<IEnumerable<Order>> GetAllOrdersWithDetailsAsync(OrderStatus? status = null, string? userId = null);
 
     /// <summary>
+    /// Gets a filtered and paginated page of all orders (admin)
+    /// </summary>
+    Task<(IEnumerable<Order> Items, int TotalCount)> GetAllOrdersPagedAsync(
+        OrderStatus? status,
+        string? userId,
+        DateTime? fromDate,
+        DateTime? toDate,
+        int page,
+        int pageSize);
+
+    /// <summary>
     /// Checks if an order belongs to a specific user
     /// </summary>
     Task<bool> IsOrderOwnedByUserAsync(string orderId, string userId);

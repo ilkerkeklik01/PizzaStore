@@ -274,11 +274,12 @@ The API provides **31 endpoints** across **6 controllers**:
 
 **Order Statuses:** Pending, Confirmed, Preparing, OutForDelivery, Delivered, Cancelled
 
-**Admin Orders Filters:**
+**Admin Orders Filters & Pagination:**
 - `?status=Pending` - Filter by order status
 - `?userId={id}` - Filter by user
-- `?fromDate=2024-01-01&toDate=2024-12-31` - Filter by date range
-- Multiple filters can be combined
+- `?fromDate=2024-01-01&toDate=2024-12-31` - Filter by date range (server-side, UTC-normalised)
+- `?page=1&pageSize=10` - Paginate results (page clamped ≥ 1, pageSize clamped 1–100)
+- Multiple filters can be combined; response is `PagedResult<OrderDto>` (items, totalCount, page, pageSize, totalPages)
 
 ## 🔒 Authentication & Authorization
 
@@ -521,11 +522,11 @@ Queries (Read Operations):
 
 ### Comprehensive Test Coverage ✅
 
-The solution includes **189 passing unit tests** and **57 E2E tests** providing complete test coverage from business logic to API endpoints.
+The solution includes **193 passing unit tests** and **57 E2E tests** providing complete test coverage from business logic to API endpoints.
 
 #### Test Projects (6)
 - `PizzaStore.API.Tests` - API layer tests (ready for implementation)
-- `PizzaStore.Application.Tests` - **189 passing tests** for all 32 handlers + `AuthorizationBehavior`
+- `PizzaStore.Application.Tests` - **193 passing tests** for all 32 handlers + `AuthorizationBehavior`
 - `PizzaStore.Domain.Tests` - Domain entity tests (ready for implementation)
 - `PizzaStore.Core.Auth.Tests` - Authentication service tests (ready for implementation)
 - `PizzaStore.Core.CrossCuttingConcerns.Tests` - Middleware tests (ready for implementation)
@@ -572,7 +573,7 @@ newman run PizzaStore-E2E-Tests.postman_collection.json
 - Topping: GetAllToppings (4)
 - Cart: GetUserCart (6), GetCartItem (6)
 - Order: GetMyOrders (3), GetOrderById (4)
-- Admin: GetAllUsers (3), GetUserById (3), GetAllOrders (6), GetOrdersByUserId (5)
+- Admin: GetAllUsers (3), GetUserById (3), GetAllOrders (8), GetOrdersByUserId (5)
 
 **Command Handlers (21 handlers - 139 tests)**
 - Pizza: CreatePizza (5), UpdatePizza (6), DeletePizza (5)
@@ -585,7 +586,7 @@ newman run PizzaStore-E2E-Tests.postman_collection.json
 
 #### Test Quality Metrics
 
-- **Total Tests:** 189 passing (0 failures)
+- **Total Tests:** 193 passing (0 failures)
 - **Test Files:** 33 (one per handler + `AuthorizationBehaviorTests`)
 - **Execution Time:** ~130ms (extremely fast)
 - **Test Infrastructure:**

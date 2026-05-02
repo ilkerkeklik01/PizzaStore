@@ -71,6 +71,47 @@ public class OrderRepository : Repository<Order>, IOrderRepository
             .FirstOrDefaultAsync(o => o.Id == orderId);
     }
 
+    public async Task<(IEnumerable<Order> Items, int TotalCount)> GetAllOrdersPagedAsync(
+        OrderStatus? status,
+        string? userId,
+        DateTime? fromDate,
+        DateTime? toDate,
+        int page,
+        int pageSize)
+    {
+        IQueryable<Order> query = _dbSet.AsNoTracking();
+
+        if (status.HasValue)
+            query = query.Where(o => o.Status == status.Value);
+
+        if (!string.IsNullOrEmpty(userId))
+            query = query.Where(o => o.UserId == userId);
+
+        if (fromDate.HasValue)
+        {
+            var from = DateTime.SpecifyKind(fromDate.Value, DateTimeKind.Utc);
+            query = query.Where(o => o.CreatedAt >= from);
+        }
+
+        if (toDate.HasValue)
+        {
+            var toExclusive = DateTime.SpecifyKind(toDate.Value, DateTimeKind.Utc).AddDays(1);
+            query = query.Where(o => o.CreatedAt < toExclusive);
+        }
+
+        var totalCount = await query.CountAsync();
+
+        var items = await query
+            .Include(o => o.OrderItems)
+                .ThenInclude(oi => oi.OrderItemToppings)
+            .OrderByDescending(o => o.CreatedAt)
+            .Skip((page - 1) * pageSize)
+            .Take(pageSize)
+            .ToListAsync();
+
+        return (items, totalCount);
+    }
+
     public async Task<IEnumerable<Order>> GetAllOrdersWithDetailsAsync(OrderStatus? status = null, string? userId = null)
     {
         var query = _dbSet

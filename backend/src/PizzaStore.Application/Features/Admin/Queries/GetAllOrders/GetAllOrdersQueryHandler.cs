@@ -1,13 +1,14 @@
 using MediatR;
+using PizzaStore.Application.Common.Models;
 using PizzaStore.Application.Features.Order.Queries;
 using PizzaStore.Domain.Interfaces;
 
 namespace PizzaStore.Application.Features.Admin.Queries.GetAllOrders;
 
 /// <summary>
-/// Retrieves all orders with optional filtering by status, user, and date range
+/// Retrieves a filtered, paginated page of all orders (admin)
 /// </summary>
-public class GetAllOrdersQueryHandler : IRequestHandler<GetAllOrdersQuery, List<OrderDto>>
+public class GetAllOrdersQueryHandler : IRequestHandler<GetAllOrdersQuery, PagedResult<OrderDto>>
 {
     private readonly IUnitOfWork _unitOfWork;
 
@@ -16,23 +17,22 @@ public class GetAllOrdersQueryHandler : IRequestHandler<GetAllOrdersQuery, List<
         _unitOfWork = unitOfWork;
     }
 
-    public async Task<List<OrderDto>> Handle(GetAllOrdersQuery request, CancellationToken cancellationToken)
+    public async Task<PagedResult<OrderDto>> Handle(GetAllOrdersQuery request, CancellationToken cancellationToken)
     {
-        // DB-level filtering by status and userId; date range filtered in-memory below
-        var orders = await _unitOfWork.Orders.GetAllOrdersWithDetailsAsync(request.Status, request.UserId);
+        var (orders, totalCount) = await _unitOfWork.Orders.GetAllOrdersPagedAsync(
+            request.Status,
+            request.UserId,
+            request.FromDate,
+            request.ToDate,
+            request.Page,
+            request.PageSize);
 
-        if (request.FromDate.HasValue)
-            orders = orders.Where(o => o.CreatedAt >= request.FromDate.Value);
-
-        if (request.ToDate.HasValue)
-        {
-            var toDateEnd = request.ToDate.Value.AddDays(1);
-            orders = orders.Where(o => o.CreatedAt < toDateEnd);
-        }
-
-        return orders
+        var items = orders
             .Select(OrderDto.FromEntity)
-            .OrderByDescending(o => o.CreatedAt)
             .ToList();
+
+        var totalPages = (int)Math.Ceiling((double)totalCount / request.PageSize);
+
+        return new PagedResult<OrderDto>(items, totalCount, request.Page, request.PageSize, totalPages);
     }
 }
