@@ -5,6 +5,31 @@ All notable changes to the PizzaStore project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.7.0] - 2026-05-03
+
+### ✨ Added
+
+#### `PizzaStore.Infrastructure.Ai` — new project (`src/PizzaStore.Infrastructure.Ai/` — new)
+- Dedicated infrastructure project for AI / Semantic Kernel integration; added to the solution under the `src` solution folder
+- References `Microsoft.SemanticKernel` v1.75.0 — the latest stable release (model-agnostic SDK for building AI-powered applications)
+- Targets `net10.0` to match the rest of the solution
+
+#### `AiServiceExtensions.AddAiServices` — Kernel DI registration (`src/PizzaStore.Infrastructure.Ai/Extensions/AiServiceExtensions.cs` — new)
+- `IServiceCollection` extension method following the same pattern as `AddPersistenceServices` and `AddAuthServices`
+- Reads `AZURE_OPENAI_ENDPOINT`, `AZURE_OPENAI_API_KEY`, and `AZURE_OPENAI_DEPLOYMENT` from `IConfiguration`; throws `InvalidOperationException` at startup if any value is missing
+- Builds a `Kernel` via `Kernel.CreateBuilder().AddAzureOpenAIChatCompletion(...)` and registers it as **transient** — recommended by the SK team because `Kernel` is a lightweight, mutable container and safe to recreate per request
+
+#### Wired into `Program.cs`
+- `using PizzaStore.Infrastructure.Ai.Extensions` added
+- `builder.Services.AddAiServices(builder.Configuration)` called after `AddPersistenceServices`
+- `PizzaStore.API.csproj` now holds a project reference to `PizzaStore.Infrastructure.Ai`
+
+### ✅ Verification
+
+- ✅ **Build:** 0 errors, 0 new warnings
+
+---
+
 ## [3.6.0] - 2026-05-01
 
 ### ✨ Added

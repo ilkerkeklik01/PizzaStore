@@ -31,6 +31,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PizzaStore.Core.Auth.Tests"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PizzaStore.Core.CrossCuttingConcerns.Tests", "tests\PizzaStore.Core.CrossCuttingConcerns.Tests\PizzaStore.Core.CrossCuttingConcerns.Tests.csproj", "{3198CDEF-8111-4618-BDE4-E70A54012793}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PizzaStore.Infrastructure.Ai", "src\PizzaStore.Infrastructure.Ai\PizzaStore.Infrastructure.Ai.csproj", "{0A23A645-0B2F-4785-A1D1-531534828A34}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -185,6 +187,18 @@ Global
 		{3198CDEF-8111-4618-BDE4-E70A54012793}.Release|x64.Build.0 = Release|Any CPU
 		{3198CDEF-8111-4618-BDE4-E70A54012793}.Release|x86.ActiveCfg = Release|Any CPU
 		{3198CDEF-8111-4618-BDE4-E70A54012793}.Release|x86.Build.0 = Release|Any CPU
+		{0A23A645-0B2F-4785-A1D1-531534828A34}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{0A23A645-0B2F-4785-A1D1-531534828A34}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{0A23A645-0B2F-4785-A1D1-531534828A34}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{0A23A645-0B2F-4785-A1D1-531534828A34}.Debug|x64.Build.0 = Debug|Any CPU
+		{0A23A645-0B2F-4785-A1D1-531534828A34}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{0A23A645-0B2F-4785-A1D1-531534828A34}.Debug|x86.Build.0 = Debug|Any CPU
+		{0A23A645-0B2F-4785-A1D1-531534828A34}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{0A23A645-0B2F-4785-A1D1-531534828A34}.Release|Any CPU.Build.0 = Release|Any CPU
+		{0A23A645-0B2F-4785-A1D1-531534828A34}.Release|x64.ActiveCfg = Release|Any CPU
+		{0A23A645-0B2F-4785-A1D1-531534828A34}.Release|x64.Build.0 = Release|Any CPU
+		{0A23A645-0B2F-4785-A1D1-531534828A34}.Release|x86.ActiveCfg = Release|Any CPU
+		{0A23A645-0B2F-4785-A1D1-531534828A34}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -202,5 +216,6 @@ Global
 		{F1E93C23-512B-4272-B70A-9DE2D1383043} = {0AB3BF05-4346-4AA6-1389-037BE0695223}
 		{831C3B35-5589-433E-B0CC-DB84C20E4A91} = {0AB3BF05-4346-4AA6-1389-037BE0695223}
 		{3198CDEF-8111-4618-BDE4-E70A54012793} = {0AB3BF05-4346-4AA6-1389-037BE0695223}
+		{0A23A645-0B2F-4785-A1D1-531534828A34} = {827E0CD3-B72D-47B6-A68D-7590B98EB39B}
 	EndGlobalSection
 EndGlobal

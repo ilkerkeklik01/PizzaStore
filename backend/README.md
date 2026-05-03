@@ -76,6 +76,8 @@ PizzaStore/
 │   │   ├── Data/                                    # DbContext, DbInitializer
 │   │   ├── Repositories/                            # Repository implementations
 │   │   └── Extensions/                              # DI registration
+│   ├── PizzaStore.Infrastructure.Ai/                # AI / Semantic Kernel integration
+│   │   └── Extensions/                              # AiServiceExtensions (Kernel DI registration)
 │   └── PizzaStore.API/                              # Controllers, Configuration
 └── tests/
     ├── PizzaStore.API.Tests/
@@ -117,6 +119,7 @@ PizzaStore/
 - ✅ **Modular Design** - Separate Core projects for Auth, CrossCuttingConcerns, and Persistence
 - ✅ **Individual Test Projects** - One test project per module for better isolation
 - ✅ **DI Extension Pattern** - Each project registers its own services via extension methods
+- ✅ **Semantic Kernel** - AI infrastructure layer with Azure OpenAI chat completion registered via `AddAiServices`
 
 ### Technical Features
 - ✅ **ASP.NET Core Identity** - Full authentication system with PBKDF2 password hashing
@@ -145,6 +148,7 @@ PizzaStore/
 - **Swashbuckle 9.0.6** (Swagger/OpenAPI) - API documentation
 - **DotNetEnv 3.1.1** - Environment variable management
 - **xUnit** - Testing framework (ready for test implementation)
+- **Microsoft.SemanticKernel 1.75.0** - AI SDK for Azure OpenAI integration
 
 ## 🚀 Getting Started
 

@@ -22,6 +22,7 @@
     <ProjectReference Include="..\PizzaStore.Core.Auth\PizzaStore.Core.Auth.csproj" />
     <ProjectReference Include="..\PizzaStore.Core.CrossCuttingConcerns\PizzaStore.Core.CrossCuttingConcerns.csproj" />
     <ProjectReference Include="..\PizzaStore.Infrastructure.Persistence\PizzaStore.Infrastructure.Persistence.csproj" />
+    <ProjectReference Include="..\PizzaStore.Infrastructure.Ai\PizzaStore.Infrastructure.Ai.csproj" />
   </ItemGroup>
 
 </Project>

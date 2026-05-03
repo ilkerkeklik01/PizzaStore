@@ -10,6 +10,7 @@ using PizzaStore.Core.Auth.Extensions;
 using PizzaStore.Core.CrossCuttingConcerns.Extensions;
 using PizzaStore.Infrastructure.Persistence.Extensions;
 using PizzaStore.Infrastructure.Persistence.Data;
+using PizzaStore.Infrastructure.Ai.Extensions;
 using PizzaStore.Domain.Entities;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -39,6 +40,9 @@ builder.Services.AddApplicationServices();
 
 // Add Persistence services (DbContext, Identity, Repositories)
 builder.Services.AddPersistenceServices(builder.Configuration);
+
+// Add AI services (Semantic Kernel)
+builder.Services.AddAiServices(builder.Configuration);
 
 // Add Auth services (JWT Authentication, AuthService)
 builder.Services.AddAuthServices(builder.Configuration);
